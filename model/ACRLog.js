@@ -10,6 +10,7 @@ const acrLogSchema = new Schema({
     acr_result: String,
     duration: Number,
     recorded_at: String,
+    registered_at: String
 });
 
 module.exports = mongoose.model('ACRLog', acrLogSchema, 'acr_log');

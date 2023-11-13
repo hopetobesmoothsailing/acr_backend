@@ -55,27 +55,35 @@ exports.login = async (req, res) => {
 }
 
 exports.registerACRResult = async (req, res) => {
-    const acrResults = req.body.acr_results;
-    if (acrResults.length === 0) {
+    const user_id = req.body.user_id;
+    const uuid = req.body.uuid;
+    const imei = req.body.imei;
+    const model = req.body.model;
+    const brand = req.body.brand;
+    const acr_result = req.body.acr_result;
+    const duration = req.body.duration;
+    const recorded_at = req.body.recorded_at;
+    const newLog = ACRLog({
+        user_id,
+        uuid,
+        imei,
+        model,
+        brand,
+        acr_result,
+        duration,
+        recorded_at,
+        registered_at: (new Date()).toLocaleString('en-US')
+    });
+    const result = await newLog.save();
+    if (result !== undefined) {
         res.send({
-            status: 'no data',
-            comment: 'No ACR Results'
-        })
+            status: 'success'
+        });
     } else {
-        acrResults.forEach(r => {
-            const newLog = ACRLog({
-                user_id: r['user_id'],
-                uuid: r['uuid'],
-                imei: r['imei'],
-                model: r['model'],
-                brand: r['brand'],
-                acr_result: r['acr_result'],
-                duration: r['duration'],
-                record_at: r['record_at'],
-                register_at: new Date()
-            });
-            newLog.save();
-        })
+        res.send({
+            status: 'error',
+            comment: 'DB Error'
+        });
     }
 }
 
@@ -85,6 +93,5 @@ const getNextSequenceValue = async (sequenceName) => {
         {$inc: {sequence_value: 1}},
         {new: true, upsert: true}
     );
-    console.log(sequenceDocument);
     return sequenceDocument.sequence_value;
 }
