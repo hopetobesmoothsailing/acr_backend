@@ -1,5 +1,12 @@
 const mongoose = require('mongoose');
-mongoose.connect('mongodb://127.0.0.1:27017/acr').then(() => {
+const dbusername = encodeURIComponent('acr_monitor_user')
+const dbpassword = encodeURIComponent('Jgq$Cu7#m0n1t');
+mongoose.connect(`mongodb://${dbusername}:${dbpassword}@185.181.136.127:27017/acr?authSource=admin`,
+    {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+    }
+).then(() => {
     console.log('mongodb connected')
 });
 const conn = mongoose.connection;
