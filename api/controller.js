@@ -87,6 +87,14 @@ exports.registerACRResult = async (req, res) => {
     }
 }
 
+exports.getUsers = async (req, res) => {
+    const users = (await Users.find({}, {__v: 0}).exec());
+    res.send({
+        status: 'success',
+        users
+    })
+}
+
 const getNextSequenceValue = async (sequenceName) => {
     const sequenceDocument = await Counters.findOneAndUpdate(
         {_id: sequenceName},
