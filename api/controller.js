@@ -95,6 +95,46 @@ exports.getUsers = async (req, res) => {
     })
 }
 
+exports.getACRResults = async (req, res) => {
+    let acrResults = [];
+    const results = await ACRLog.aggregate([
+        {
+            $match: { acr_result: {$ne: 'NULL'} }
+        },
+        {
+            $group: {_id: {'title': '$acr_result'}, total_count: {$sum: 1}}
+        }
+    ], {allowDiskUse: true}).exec();
+    for (const item of results) {
+        const users = await ACRLog.aggregate([
+            {
+                $match: { acr_result: {$eq: item._id.title} }
+            },
+            {
+                $group: {_id: '$user_id'}
+            }
+        ], {allowDiskUse: true}).exec();
+        const phones = await ACRLog.aggregate([
+            {
+                $match: {acr_result: {$eq: item._id.title}}
+            },
+            {
+                $group: {_id: '$brand'}
+            }
+        ], {allowDiskUse: true}).exec();
+        acrResults = [...acrResults, {
+            title: item._id.title,
+            total_count: item.total_count,
+            user_count: users.length,
+            phone_count: phones.length
+        }];
+    }
+    res.send({
+        status: 'success',
+        acrResults
+    })
+}
+
 const getNextSequenceValue = async (sequenceName) => {
     const sequenceDocument = await Counters.findOneAndUpdate(
         {_id: sequenceName},
