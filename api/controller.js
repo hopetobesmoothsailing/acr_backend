@@ -102,21 +102,24 @@ exports.getACRResults = async (req, res) => {
             $match: { acr_result: {$ne: 'NULL'} }
         },
         {
-            $group: {_id: {'title': '$acr_result'}, total_count: {$sum: 1}}
+            $group: {_id: {'title': '$acr_result', 'date': '$recorded_at'}, total_count: {$sum: 1}}
+        },
+        {
+            $sort: {'_id.title': 1}
         }
     ], {allowDiskUse: true}).exec();
     for (const item of results) {
         const users = await ACRLog.aggregate([
             {
-                $match: { acr_result: {$eq: item._id.title} }
+                $match: { acr_result: {$eq: item._id.title}, recorded_at: {$eq: item._id.date} }
             },
             {
                 $group: {_id: '$user_id'}
-            }
+            },
         ], {allowDiskUse: true}).exec();
         const phones = await ACRLog.aggregate([
             {
-                $match: {acr_result: {$eq: item._id.title}}
+                $match: {acr_result: {$eq: item._id.title}, recorded_at: {$eq: item._id.date}}
             },
             {
                 $group: {_id: '$brand'}
@@ -124,6 +127,7 @@ exports.getACRResults = async (req, res) => {
         ], {allowDiskUse: true}).exec();
         acrResults = [...acrResults, {
             title: item._id.title,
+            date: item._id.date,
             total_count: item.total_count,
             user_count: users.length,
             phone_count: phones.length
