@@ -72,7 +72,7 @@ exports.registerACRResult = async (req, res) => {
         acr_result,
         duration,
         recorded_at,
-        registered_at: (new Date()).toLocaleString('en-US')
+        registered_at: (new Date()).toLocaleString('en-US', {hour12: false})
     });
     const result = await newLog.save();
     if (result !== undefined) {
