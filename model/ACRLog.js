@@ -9,6 +9,9 @@ const acrLogSchema = new Schema({
     brand: String,
     acr_result: String,
     duration: Number,
+    longitude: String,
+    latitude: String,
+    location_address: String,
     recorded_at: String,
     registered_at: String
 });

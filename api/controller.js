@@ -62,6 +62,9 @@ exports.registerACRResult = async (req, res) => {
     const brand = req.body.brand;
     const acr_result = req.body.acr_result;
     const duration = req.body.duration;
+    const longitude = req.body.longitude;
+    const latitude = req.body.latitude;
+    const location_address = req.body.locationAddress;
     const recorded_at = req.body.recorded_at;
     const newLog = ACRLog({
         user_id,
@@ -71,6 +74,9 @@ exports.registerACRResult = async (req, res) => {
         brand,
         acr_result,
         duration,
+        longitude,
+        latitude,
+        location_address,
         recorded_at,
         registered_at: (new Date()).toLocaleString('en-US', {hour12: false})
     });
