@@ -101,6 +101,14 @@ exports.getUsers = async (req, res) => {
     })
 }
 
+exports.getACRDetails = async (req, res) => {
+    const acrDetails = (await ACRLog.find({}, {__v: 0}).exec());
+    res.send({
+        status: 'success',
+        acrDetails
+    })
+}
+
 exports.getACRResults = async (req, res) => {
     let acrResults = [];
     const results = await ACRLog.aggregate([
