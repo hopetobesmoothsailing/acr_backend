@@ -102,12 +102,111 @@ exports.getUsers = async (req, res) => {
 }
 
 exports.getACRDetails = async (req, res) => {
-    const acrDetails = (await ACRLog.find({}, {__v: 0}).exec());
+    try {
+        const acrDetails = await ACRLog.find(
+          { latitude: { $exists: true, $ne: '' }, longitude: { $exists: true, $ne: '' } }, // Filter for non-empty latitudes and longitudes
+          { __v: 0 }
+        ).sort({ recorded_at: -1 }); // Sort by recorded_at field in descending order
+    
+        res.send({
+          status: 'success',
+          acrDetails
+        });
+      } catch (error) {
+        res.status(500).send({ status: 'error', message: 'Failed to fetch ACR details' });
+      }
+  };
+
+exports.getACRDetailsByDate = async (req, res) => {
+  try {
+    const {date}  = req.body; // Assuming the date is sent in the request body
+    // Handle the date format conversion if necessary to match MongoDB date format
+
+    // Use the date to fetch ACR details from MongoDB
+    // Modify this part according to your database schema and retrieval logic
+     // Assuming date is in the format 'dd/MM/yyyy', adjust the regex pattern accordingly
+     const regexPattern = new RegExp(`^${date}`);
+     console.log('Regex Pattern:', date); // Log the regex pattern
+     // Query ACR details based on the regex pattern for recorded_at
+     const acrDetails = await ACRLog.find({ recorded_at: { $regex: date } });
+
+  //  console.log(acrDetails);
     res.send({
+      status: 'success',
+      acrDetails,
+    });
+  } catch (error) {
+    console.error('Error fetching ACR details by date:', error);
+    res.status(500).send({
+      status: 'error',
+      message: 'Failed to fetch ACR details by date',
+    });
+  }
+};
+
+exports.getACRDetailsByDateTimeslot = async (req, res) => {
+    try {
+      const { date } = req.body; // Assuming the date is sent in the request body
+  
+      // Assuming date is in the format 'dd/MM/yyyy'
+      const [day, month, year] = date.split('/');
+      const startDate = new Date(year, month - 1, day); // Month needs to be zero-based in JavaScript Date
+  
+      // Create time slot intervals (3 hours each)
+      const timeSlots = [];
+      for (let i = 0; i < 8; i++) {
+        const startHour = i * 3;
+        const endHour = startHour + 2;
+        const timeSlot = {
+          start: new Date(startDate).setHours(startHour, 0, 0, 0),
+          end: new Date(startDate).setHours(endHour, 59, 59, 999),
+          label: `${startHour.toString().padStart(2, '0')}:00 - ${endHour.toString().padStart(2, '0')}:59`,
+        };
+        timeSlots.push(timeSlot);
+      }
+      console.log("timeSlots[0].start");
+      console.log(timeSlots[0].start);
+      const acrDetails = await ACRLog.find({
+        recorded_at: {
+            $gte: new Date(`${date} ${timeSlots[0].start}`), // Start of the first time slot
+            $lte: new Date(`${date} ${timeSlots[timeSlots.length - 1].end}`), // End of the last time slot
+          },
+      });
+      console.log("acrDetails");
+      console.log(acrDetails);
+
+      const groupedDetails = timeSlots.map((slot) => {
+        const slotDetails = acrDetails.filter((detail) => {
+          const recordedDate = new Date(detail.recorded_at);
+          return recordedDate >= slot.start && recordedDate <= slot.end;
+        });
+        const groupedByChannel = {}; // Grouping by acr_result for each time slot
+        slotDetails.forEach((detail) => {
+          if (!groupedByChannel[detail.acr_result]) {
+            groupedByChannel[detail.acr_result] = 1;
+          } else {
+            groupedByChannel[detail.acr_result]++;
+          }
+        });
+        return {
+          label: slot.label,
+          data: groupedByChannel,
+        };
+      });
+  
+      console.log(groupedDetails);
+      res.send({
         status: 'success',
-        acrDetails
-    })
-}
+        groupedDetails,
+      });
+    } catch (error) {
+      console.error('Error fetching ACR details by date:', error);
+      res.status(500).send({
+        status: 'error',
+        message: 'Failed to fetch ACR details by date',
+      });
+    }
+  };
 
 exports.getACRResults = async (req, res) => {
     let acrResults = [];
