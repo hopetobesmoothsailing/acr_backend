@@ -11,5 +11,6 @@ router.post('/getACRDetailsByDate', Controller.getACRDetailsByDate);
 router.post('/getACRDetailsByDateTimeslot', Controller.getACRDetailsByDateTimeslot);
 router.post('/getResultsByDateAndChannel', Controller.getResultsByDateAndChannel);
 router.post('/getUserCountByTime', Controller.getUserCountByTime);
+router.post('/getACRDetails', Controller.getACRDetails);
 
 module.exports = router;
