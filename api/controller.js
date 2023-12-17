@@ -315,6 +315,7 @@ exports.getResultsByDateAndChannel = async (req, res) => {
     }
 };
 
+
 exports.getACRDetailsByDateTimeslot = async (req, res) => {
     try {
         const { date } = req.body; // Assuming the date is sent in the request body
@@ -430,6 +431,19 @@ exports.sendReminderEmailToInactiveUsers = async () => {
       console.log('Reminder emails sent to inactive users.');
     } catch (error) {
       console.error('Error sending reminder emails:', error);
+    }
+  };
+// Helper function to get active user IDs who sent data in the last 6 hours
+const getActiveUsersIds = async (dateBefore24Hours) => {
+    try {
+      // Find user IDs who sent data in the last 6 hours
+      const activeUserIds = await ACRLog.distinct('user_id', {
+        recorded_at: { $gte: dateBefore24Hours }
+      });
+      return activeUserIds;
+    } catch (error) {
+      console.error('Error fetching active user IDs:', error);
+      return [];
     }
   };
 
