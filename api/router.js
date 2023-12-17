@@ -12,5 +12,6 @@ router.post('/getACRDetailsByDateTimeslot', Controller.getACRDetailsByDateTimesl
 router.post('/getResultsByDateAndChannel', Controller.getResultsByDateAndChannel);
 router.post('/getUserCountByTime', Controller.getUserCountByTime);
 router.post('/getACRDetails', Controller.getACRDetails);
-
+router.post('/sendReminderEmailToInactiveUsers', Controller.sendReminderEmailToInactiveUsers);
+ 
 module.exports = router;

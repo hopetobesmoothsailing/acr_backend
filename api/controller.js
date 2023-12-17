@@ -2,6 +2,8 @@ const Users = require("../model/User");
 const ACRLog = require('../model/ACRLog');
 const Counters = require('../model/Counter');
 const md5 = require("md5");
+const nodemailer = require('nodemailer');
+
 
 exports.signup = async (req, res) => {
     const name = 'name';
@@ -385,3 +387,49 @@ const getNextSequenceValue = async (sequenceName) => {
     );
     return sequenceDocument.sequence_value;
 }
+
+exports.sendReminderEmailToInactiveUsers = async () => {
+    try {
+      // Calculate the date 6 hours ago
+      const dateBefore24Hours = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  
+      // Find users who haven't sent data in the last 24 hours
+      const inactiveUsers = await Users.find({
+        _id: { $nin: await getActiveUsersIds(dateBefore24Hours) }
+      });
+  
+      // Prepare and send emails to inactive users
+      inactiveUsers.forEach(async (user) => {
+        const { email, name } = user; // Assuming User model has 'email' and 'name' fields
+  
+        // Create transporter for sending emails
+        const transporter = nodemailer.createTransport({
+            host: 'smtps.aruba.it',
+            port: 465,
+            secure: true, // true for SSL
+            auth: {
+              user: 'noreply@chartmusic.it',
+              pass: 'Norepchrt.2022',
+            },
+          });
+
+  
+        // Email content
+        const mailOptions = {
+          from: 'noreply@chartmusic.it',
+          // to: email,
+          to: 'antonio.trigiani@gmail.com',
+          subject: 'RadioMonitor Reminder: Verifica invio dati',
+          text: `Ciao ${name} ${email},\n\nQuesto messaggio per ricordarti di avviare l'app RadioMonitor. Sono passate 24 ore da quando abbiamo ricevuto il tuo ultimo invio. Ti chiediamo gentilmente se ti sia possibile avviare il riconoscimento chiudendo e riavviando l'applicazione o effettuando un doppio tap sullo schermo attendendo che il pulsante diventi di colore blu. Grazie davvero per la tua preziosa collaborazione!\n\nA presto, lo staff di RadioMonitor`,
+        };
+  
+        // Send email
+        await transporter.sendMail(mailOptions);
+      });
+  
+      console.log('Reminder emails sent to inactive users.');
+    } catch (error) {
+      console.error('Error sending reminder emails:', error);
+    }
+  };
+
