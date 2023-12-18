@@ -391,7 +391,7 @@ const getNextSequenceValue = async (sequenceName) => {
     return sequenceDocument.sequence_value;
 }
 
-exports.sendReminderEmailToInactiveUsers = async () => {
+exports.sendReminderEmailToInactiveUsers = async (req,res ) => {
     try {
         const {date}  = req.body; // Assuming the date is sent in the request body
         // Handle the date format conversion if necessary to match MongoDB date format
@@ -442,6 +442,7 @@ exports.sendReminderEmailToInactiveUsers = async () => {
   
         // Send email
         // await transporter.sendMail(mailOptions);
+        return res = "OK";
       });
   
       console.log('Reminder emails sent to inactive users.');
