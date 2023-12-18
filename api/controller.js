@@ -393,14 +393,28 @@ const getNextSequenceValue = async (sequenceName) => {
 
 exports.sendReminderEmailToInactiveUsers = async () => {
     try {
-      // Calculate the date 6 hours ago
-      const dateBefore24Hours = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        const {date}  = req.body; // Assuming the date is sent in the request body
+        // Handle the date format conversion if necessary to match MongoDB date format
+
+        // Use the date to fetch ACR details from MongoDB
+        // Modify this part according to your database schema and retrieval logic
+        // Assuming date is in the format 'dd/MM/yyyy', adjust the regex pattern accordingly
+        const activeUsers = {}
+        const acrDetails = await ACRLog.find({ recorded_at: { $regex: date } });
+        acrDetails.forEach((detail) => {
+            if (!activeUsers[detail.user_id]) {
+                activeUsers.push(detail.user_id);
+            }
+          });
+        console.log("Active Users");
+        console.log(activeUsers);
   
       // Find users who haven't sent data in the last 24 hours
       const inactiveUsers = await Users.find({
-        _id: { $nin: await getActiveUsersIds(dateBefore24Hours) }
+        _id: { $nin: activeUsers }
       });
-  
+      console.log("INACTIVE USERS");
+      console.log(inactiveUsers);      
       // Prepare and send emails to inactive users
       inactiveUsers.forEach(async (user) => {
         const { email, name } = user; // Assuming User model has 'email' and 'name' fields
@@ -427,7 +441,7 @@ exports.sendReminderEmailToInactiveUsers = async () => {
         };
   
         // Send email
-        await transporter.sendMail(mailOptions);
+        // await transporter.sendMail(mailOptions);
       });
   
       console.log('Reminder emails sent to inactive users.');
@@ -438,6 +452,7 @@ exports.sendReminderEmailToInactiveUsers = async () => {
 // Helper function to get active user IDs who sent data in the last 6 hours
 const getActiveUsersIds = async (dateBefore24Hours) => {
     try {
+        
       // Find user IDs who sent data in the last 6 hours
       const activeUserIds = await ACRLog.distinct('user_id', {
         recorded_at: { $gte: dateBefore24Hours }
