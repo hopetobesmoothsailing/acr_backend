@@ -399,12 +399,12 @@ exports.sendReminderEmailToInactiveUsers = async (req,res ) => {
         // Use the date to fetch ACR details from MongoDB
         // Modify this part according to your database schema and retrieval logic
         // Assuming date is in the format 'dd/MM/yyyy', adjust the regex pattern accordingly
-        const activeUsers = {}
+        const activeUsers = []
         const acrDetails = await ACRLog.find({ recorded_at: { $regex: date } });
         acrDetails.forEach((detail) => {
-            if (!activeUsers[detail.user_id]) {
+            if (!activeUsers.includes(detail.user_id)) {
                 activeUsers.push(detail.user_id);
-            }
+              }
           });
         console.log("Active Users");
         console.log(activeUsers);
