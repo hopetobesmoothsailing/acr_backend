@@ -3,6 +3,7 @@ const ACRLog = require('../model/ACRLog');
 const Counters = require('../model/Counter');
 const md5 = require("md5");
 const nodemailer = require('nodemailer');
+const moment = require("moment");
 
 
 exports.signup = async (req, res) => {
@@ -68,7 +69,7 @@ exports.registerACRResult = async (req, res) => {
     const longitude = req.body.longitude;
     const latitude = req.body.latitude;
     const location_address = req.body.locationAddress;
-    const recorded_at = req.body.recorded_at;
+    const recorded_at = req.body.recorded_at; // Format DD/MM/YYYY HH:mm
     const newLog = ACRLog({
         user_id,
         uuid,
@@ -81,6 +82,7 @@ exports.registerACRResult = async (req, res) => {
         latitude,
         location_address,
         recorded_at,
+        f_recorded_at: moment(recorded_at, 'DD/MM/YYYY HH:mm'),
         registered_at: (new Date()).toLocaleString('en-US', {hour12: false})
     });
     const result = await newLog.save();

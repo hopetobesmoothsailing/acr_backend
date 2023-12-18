@@ -13,6 +13,7 @@ const acrLogSchema = new Schema({
     latitude: String,
     location_address: String,
     recorded_at: String,
+    f_recorded_at: Date,
     registered_at: String
 });
 
