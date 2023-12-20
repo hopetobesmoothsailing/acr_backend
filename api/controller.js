@@ -70,6 +70,7 @@ exports.registerACRResult = async (req, res) => {
     const latitude = req.body.latitude;
     const location_address = req.body.locationAddress;
     const recorded_at = req.body.recorded_at; // Format DD/MM/YYYY HH:mm
+    console.log(moment(recorded_at, 'DD/MM/YYYY HH:mm').utcOffset('+0100'));
     const newLog = ACRLog({
         user_id,
         uuid,
@@ -82,7 +83,7 @@ exports.registerACRResult = async (req, res) => {
         latitude,
         location_address,
         recorded_at,
-        f_recorded_at: moment(recorded_at, 'DD/MM/YYYY HH:mm'),
+        f_recorded_at: (moment(recorded_at, 'DD/MM/YYYY HH:mm').utcOffset('+0100')),
         registered_at: (new Date()).toLocaleString('en-US', {hour12: false})
     });
     const result = await newLog.save();

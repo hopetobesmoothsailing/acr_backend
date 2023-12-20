@@ -1,4 +1,5 @@
 const mongoose = require('mongoose')
+const moment = require("moment");
 const Schema = mongoose.Schema;
 
 const acrLogSchema = new Schema({
@@ -13,7 +14,10 @@ const acrLogSchema = new Schema({
     latitude: String,
     location_address: String,
     recorded_at: String,
-    f_recorded_at: Date,
+    f_recorded_at: {
+        type: Date,
+        default: moment(Date.now()).utcOffset('+0100')
+    },
     registered_at: String
 });
 
