@@ -1,5 +1,6 @@
 const Users = require("../model/User");
 const ACRLog = require('../model/ACRLog');
+const Palinsesto = require('../model/Palinsesto');
 const Counters = require('../model/Counter');
 const md5 = require("md5");
 const nodemailer = require('nodemailer');
@@ -477,7 +478,7 @@ const getActiveUsersIds = async (dateBefore24Hours) => {
         const dateRegexPattern = new RegExp(`^${date}`);
 
         // Query ACR details based on the regex pattern for recorded_at and acr_result
-        const palDetails = await palinsesto.find({
+        const palDetails = await Palinsesto.find({
             day: { $regex: dateRegexPattern },
             "events.channel.name":channel_name // Add acr_result filter
         });
