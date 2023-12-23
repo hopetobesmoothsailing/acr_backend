@@ -465,3 +465,33 @@ const getActiveUsersIds = async (dateBefore24Hours) => {
     }
   };
 
+
+
+  exports.getPalinsestoByDateAndChannel = async (req, res) => {
+    try {
+        const { date, channel_name } = req.body; // Assuming date and acr_result are sent in the request body
+
+        // Handle the date format conversion if necessary to match MongoDB date format
+
+        // Create a regular expression for the date
+        const dateRegexPattern = new RegExp(`^${date}`);
+
+        // Query ACR details based on the regex pattern for recorded_at and acr_result
+        const palDetails = await palinsesto.find({
+            day: { $regex: dateRegexPattern },
+            "events.channel.name":channel_name // Add acr_result filter
+        });
+
+        res.send({
+            status: 'success',
+            palDetails,
+        });
+    } catch (error) {
+        console.error('Error fetching PALINSESTO details by date:', error);
+        res.status(500).send({
+            status: 'error',
+            message: 'Failed to fetch PALINSESTO details by date',
+        });
+    }
+};
+
