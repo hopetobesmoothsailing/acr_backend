@@ -10,6 +10,7 @@ router.post('/getACRResults', Controller.getACRResults);
 router.post('/getACRDetailsByDate', Controller.getACRDetailsByDate);
 router.post('/getACRDetailsByDateTimeslot', Controller.getACRDetailsByDateTimeslot);
 router.post('/getResultsByDateAndChannel', Controller.getResultsByDateAndChannel);
+router.post('/getPalinsestoByDateAndChannel', Controller.getPalinsestoByDateAndChannel);
 router.post('/getUserCountByTime', Controller.getUserCountByTime);
 router.post('/getACRDetails', Controller.getACRDetails);
 router.post('/sendReminderEmailToInactiveUsers', Controller.sendReminderEmailToInactiveUsers);
