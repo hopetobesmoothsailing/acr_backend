@@ -22,6 +22,7 @@ const userSchema = new Schema({
     Prof_txt: String,
     Istr_cod: Number,
     Istr_txt: String,
+    weight_s: Number,
     password: String,
 });
 

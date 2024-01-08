@@ -11,21 +11,21 @@ exports.signup = async (req, res) => {
     const ID = req.body.id;
     const name = req.body.name;
     const email = req.body.email;
-    const Gen_cod = req.body.gen_cod;
+    const Gen_cod = req.body.gen_cod === '-' ? 0 : req.body.gen_cod;
     const Gen_txt = req.body.gen_txt;
-    const Age_cod = req.body.age_cod;
+    const Age_cod = req.body.age_cod === '-' ? 0 : req.body.age_cod;
     const Age_txt = req.body.age_txt;
-    const Reg_cod = req.body.reg_cod;
+    const Reg_cod = req.body.reg_cod === '-' ? 0 : req.body.reg_cod;
     const Reg_txt = req.body.reg_txt;
-    const Area_cod = req.body.area_cod;
+    const Area_cod = req.body.area_cod === '-' ? 0 : req.body.area_cod;
     const Area_txt = req.body.area_txt;
-    const PV_cod = req.body.pv_cod;
+    const PV_cod = req.body.pv_cod === '-' ? 0 : req.body.pv_cod;
     const PV_txt = req.body.pv_txt;
-    const AC_cod = req.body.ac_cod;
+    const AC_cod = req.body.ac_cod === '-' ? 0 : req.body.ac_cod;
     const AC_txt = req.body.ac_txt;
-    const Prof_cod = req.body.prof_cod;
+    const Prof_cod = req.body.prof_cod === '-' ? 0 : req.body.prof_cod;
     const Prof_txt = req.body.prof_txt;
-    const Istr_cod = req.body.istr_cod;
+    const Istr_cod = req.body.istr_cod === '-' ? 0 : req.body.istr_cod;
     const Istr_txt = req.body.istr_txt;
     const password = md5(req.body.password);
     const newUser = Users({
@@ -49,6 +49,7 @@ exports.signup = async (req, res) => {
         Prof_txt,
         Istr_cod,
         Istr_txt,
+        weight_s: 1.0,
         password,
     });
     if ((await Users.find({email}, {_id: 0, __v: 0}).exec()).length > 0) {
