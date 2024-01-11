@@ -503,6 +503,36 @@ exports.sendReminderEmailToInactiveUsers = async (req, res) => {
         console.error('Error sending reminder emails:', error);
     }
 };
+exports.getAppStatusUsers = async (req, res) => {
+    try {
+        const {date} = req.body; // Assuming the date is sent in the request body
+        const activeUsers = []
+        const acrDetails = await ACRLog.find({recorded_at: {$regex: date}});
+        acrDetails.forEach((detail) => {
+            if (!activeUsers.includes(detail.user_id)) {
+                activeUsers.push(detail.user_id);
+            }
+        });
+        console.log("Active Users for data ",date);
+        console.log(activeUsers);
+
+        // Find users who haven't sent data in the last 24 hours
+        const inactiveUsers = await Users.find({
+            _id: {$nin: activeUsers}
+        });
+        console.log("INACTIVE USERS for data ",date);
+        console.log(inactiveUsers);
+        // Prepare and send emails to inactive users
+        
+        res.send({
+            status: 'success',
+            activeUsers: activeUsers,
+            inactiveUsers: inactiveUsers,
+        });
+    } catch (error) {
+        console.error('Error sending reminder emails:', error);
+    }
+};
 // Helper function to get active user IDs who sent data in the last 6 hours
 const getActiveUsersIds = async (dateBefore24Hours) => {
     try {
