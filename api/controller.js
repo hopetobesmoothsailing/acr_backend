@@ -53,10 +53,25 @@ exports.signup = async (req, res) => {
         password,
     });
     if ((await Users.find({email}, {_id: 0, __v: 0}).exec()).length > 0) {
-        res.send({
-            status: 'already exists',
-            comment: 'Email has already existed'
+        await Users.findOneAndUpdate({email}, {
+            Gen_cod,
+            Gen_txt,
+            Age_cod,
+            Age_txt,
+            Reg_cod,
+            Reg_txt,
+            Area_cod,
+            Area_txt,
+            PV_cod,
+            PV_txt,
+            AC_cod,
+            AC_txt,
+            Prof_cod,
+            Prof_txt,
+            Istr_cod,
+            Istr_txt
         });
+        res.send({status: 'already existed'});
     } else {
         const result = await newUser.save();
         if (result !== undefined) {
