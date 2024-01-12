@@ -524,7 +524,7 @@ exports.getAppStatusUsers = async (req, res) => {
             _id: {$nin: activeUsers}
         });
         console.log("INACTIVE USERS for data ",date);
-        console.log(inactiveUsers);
+        console.log(allinactiveUsers);
         // Prepare and send emails to inactive users
         
         res.send({
