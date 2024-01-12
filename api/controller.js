@@ -517,7 +517,10 @@ exports.getAppStatusUsers = async (req, res) => {
         console.log(activeUsers);
 
         // Find users who haven't sent data in the last 24 hours
-        const inactiveUsers = await Users.find({
+        const allactiveUsers = await Users.find({
+            _id: {$in: activeUsers}
+        });
+        const allinactiveUsers = await Users.find({
             _id: {$nin: activeUsers}
         });
         console.log("INACTIVE USERS for data ",date);
@@ -526,8 +529,8 @@ exports.getAppStatusUsers = async (req, res) => {
         
         res.send({
             status: 'success',
-            activeUsers: activeUsers,
-            inactiveUsers: inactiveUsers,
+            activeUsers: allactiveUsers,
+            inactiveUsers: allinactiveUsers,
         });
     } catch (error) {
         console.error('Error sending reminder emails:', error);
