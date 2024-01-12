@@ -536,6 +536,50 @@ exports.getAppStatusUsers = async (req, res) => {
         console.error('Error sending reminder emails:', error);
     }
 };
+exports.getAppActivatedUsers = async (req, res) => {
+    try {
+        const { date } = req.body; // Assuming the date is sent in the request body
+    
+        // Parse the date in the dd/mm/yyyy format and convert it to ISO format
+        const [day, month, year] = date.split('/');
+        const isoDate = new Date(`${year}-${month}-${day}T00:00:00.000Z`);
+    
+        const activeUsers = [];
+        const acrDetails = await ACRLog.find({ f_recorded_at: { $gte: isoDate } });
+    
+        acrDetails.forEach((detail) => {
+          if (!activeUsers.includes(detail.user_id)) {
+            console.log("Found user id", detail.user_id);
+            console.log("Found active user", detail.recorded_at);
+            activeUsers.push(detail.user_id);
+          }
+        });
+    
+        console.log("GetAppActivatedUser: Active Users for date", date);
+        console.log(activeUsers);
+    
+        // Find users who haven't sent data in the last 24 hours
+        const allActiveUsers = await Users.find({
+          _id: { $in: activeUsers }
+        });
+    
+        const allInactiveUsers = await Users.find({
+          _id: { $nin: activeUsers }
+        });
+    
+        console.log("GetAppActivatedUser: INACTIVE USERS for date", date);
+        console.log(allInactiveUsers);
+    
+        // Prepare and send emails to inactive users
+        res.send({
+          status: 'success',
+          activeUsers: allActiveUsers,
+          inactiveUsers: allInactiveUsers,
+        });
+      } catch (error) {
+        console.error('Error sending GetAppActivatedUser:', error);
+      }
+};
 // Helper function to get active user IDs who sent data in the last 6 hours
 const getActiveUsersIds = async (dateBefore24Hours) => {
     try {
