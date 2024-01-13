@@ -201,7 +201,30 @@ exports.getACRDetailsByDate = async (req, res) => {
         });
     }
 };
+exports.getACRDetailsByDateAndUser = async (req, res) => {
+    try {
+        const { date, user_id } = req.query; // Assuming the parameters are sent in the query string
 
+        // Use the date and user_id to fetch ACR details from MongoDB
+        // Modify this part according to your database schema and retrieval logic
+        // Assuming date is in the format 'dd/MM/yyyy', adjust the regex pattern accordingly
+        const regexPattern = new RegExp(`^${date}`);
+        
+        // Query ACR details based on the regex pattern for recorded_at and user_id
+        const acrDetails = await ACRLog.find({ recorded_at: { $regex: date }, user_id: parseInt(user_id) });
+
+        res.send({
+            status: 'success',
+            acrDetails,
+        });
+    } catch (error) {
+        console.error('Error fetching ACR details by date and user:', error);
+        res.status(500).send({
+            status: 'error',
+            message: 'Failed to fetch ACR details by date and user',
+        });
+    }
+};
 exports.getACRDetailsByDateTimeslot = async (req, res) => {
     try {
         const {date} = req.body; // Assuming the date is sent in the request body
