@@ -211,8 +211,8 @@ exports.getACRDetailsByDateAndUser = async (req, res) => {
         // Assuming date is in the format 'dd/MM/yyyy', adjust the regex pattern accordingly
         // const regexPattern = new RegExp(`^${date.replace(/\//g, '-')}`);
         console.log("Data da cercare",date);
-        const [day, month, year] = date.split('/');
-        const newdate = `${day}-${month}-${year}`;
+        const [day, month, year] = date.split('-');
+        const newdate = `${day}/${month}/${year}`;
         // Query ACR details based on the regex pattern for recorded_at and user_id
         if (date !== '') 
         acrDetails = await ACRLog.find({ recorded_at: { $regex: newdate }, user_id: parseInt(user_id) });
