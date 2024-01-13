@@ -204,15 +204,14 @@ exports.getACRDetailsByDate = async (req, res) => {
 exports.getACRDetailsByDateAndUser = async (req, res) => {
     try {
         const { date, user_id } = req.query; // Assuming the parameters are sent in the query string
-
+        console.log(req);
         // Use the date and user_id to fetch ACR details from MongoDB
         // Modify this part according to your database schema and retrieval logic
         // Assuming date is in the format 'dd/MM/yyyy', adjust the regex pattern accordingly
-        date = date.replace(/-/g, '/');
-        const regexPattern = new RegExp(`^${date}`);
+        const regexPattern = new RegExp(`^${date.replace(/\//g, '-')}`);
         console.log("Data da cercare",date);
         // Query ACR details based on the regex pattern for recorded_at and user_id
-        const acrDetails = await ACRLog.find({ recorded_at: { $regex: date }, user_id: parseInt(user_id) });
+        const acrDetails = await ACRLog.find({ recorded_at: { $regex: regexPattern }, user_id: parseInt(user_id) });
 
         res.send({
             status: 'success',
