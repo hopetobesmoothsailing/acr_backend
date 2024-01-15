@@ -201,6 +201,39 @@ exports.getACRDetailsByDate = async (req, res) => {
         });
     }
 };
+exports.getACRDetailsByDateRTV = async (req, res) => {
+    try {
+        const  date = req.body.date; // Assuming the parameters are sent in the query string
+        const  type = req.body.type; // Assuming the parameters are sent in the query string
+        const channels_tv = ['RAI1','RAI2','RAI3','RETE4','CANALE5','ITALIA1','LA7'];
+        // Handle the date format conversion if necessary to match MongoDB date format
+        // Use the date to fetch ACR details from MongoDB
+        // Modify this part according to your database schema and retrieval logic
+        // Assuming date is in the format 'dd/MM/yyyy', adjust the regex pattern accordingly
+        const regexPattern = new RegExp(`^${date}`);
+        console.log('Regex Pattern:', date); // Log the regex pattern
+        // Query ACR details based on the regex pattern for recorded_at
+        let acrDetails = [];
+        if (type ==='TV') 
+        acrDetails = await ACRLog.find(
+            {recorded_at: {$regex: date},      acr_result: { $in: channels_tv }});
+        else
+        acrDetails = await ACRLog.find(
+            {recorded_at: {$regex: date},      acr_result: { $nin: channels_tv }});
+
+        //  console.log(acrDetails);
+        res.send({
+            status: 'success',
+            acrDetails,
+        });
+    } catch (error) {
+        console.error('Error fetching ACR type details by date:', error);
+        res.status(500).send({
+            status: 'error',
+            message: 'Failed to fetch ACR type details by date',
+        });
+    }
+};
 exports.getACRDetailsByDateAndUser = async (req, res) => {
     
     try {
