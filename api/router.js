@@ -8,6 +8,7 @@ router.post('/registerACRResult', Controller.registerACRResult)
 router.post('/getUsers', Controller.getUsers);
 router.post('/getACRResults', Controller.getACRResults);
 router.post('/getACRDetailsByDate', Controller.getACRDetailsByDate);
+router.post('/getACRDetailsByDateRTV', Controller.getACRDetailsByDate);
 router.post('/getACRDetailsByDateTimeslot', Controller.getACRDetailsByDateTimeslot);
 router.post('/getResultsByDateAndChannel', Controller.getResultsByDateAndChannel);
 router.post('/getPalinsestoByDateAndChannel', Controller.getPalinsestoByDateAndChannel);
