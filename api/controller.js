@@ -140,7 +140,7 @@ exports.registerACRResult = async (req, res) => {
     });
     const result = await newLog.save();
     if (result !== undefined) {
-        await Users.findOneAndUpdate({_id: user_id}, {isLogin: 1})
+        await Users.updateOne({_id: user_id}, {isLogin: 1})
         res.send({
             status: 'success'
         });
