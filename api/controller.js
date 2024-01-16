@@ -51,6 +51,7 @@ exports.signup = async (req, res) => {
         Istr_txt,
         weight_s: 1.0,
         password,
+        isLogin: 0
     });
     if ((await Users.find({email}, {_id: 0, __v: 0}).exec()).length > 0) {
         await Users.findOneAndUpdate({email}, {
@@ -122,7 +123,6 @@ exports.registerACRResult = async (req, res) => {
     const latitude = req.body.latitude;
     const location_address = req.body.locationAddress;
     const recorded_at = req.body.recorded_at; // Format DD/MM/YYYY HH:mm
-    console.log(moment(recorded_at, 'DD/MM/YYYY HH:mm').utcOffset('+0100'));
     const newLog = ACRLog({
         user_id,
         uuid,
@@ -140,6 +140,7 @@ exports.registerACRResult = async (req, res) => {
     });
     const result = await newLog.save();
     if (result !== undefined) {
+        await Users.findOneAndUpdate({_id: user_id}, {isLogin: 1})
         res.send({
             status: 'success'
         });
