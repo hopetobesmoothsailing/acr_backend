@@ -123,6 +123,7 @@ exports.registerACRResult = async (req, res) => {
     const latitude = req.body.latitude;
     const location_address = req.body.locationAddress;
     const recorded_at = req.body.recorded_at; // Format DD/MM/YYYY HH:mm
+    const appVersion = req.body.app_version;
     const newLog = ACRLog({
         user_id,
         uuid,
@@ -140,7 +141,11 @@ exports.registerACRResult = async (req, res) => {
     });
     const result = await newLog.save();
     if (result !== undefined) {
-        await Users.updateOne({_id: user_id}, {isLogin: 1})
+        if (appVersion !== undefined) {
+            await Users.updateOne({_id: user_id}, {isLogin: 1, appVersion})
+        } else {
+            await Users.updateOne({_id: user_id}, {isLogin: 1})
+        }
         res.send({
             status: 'success'
         });

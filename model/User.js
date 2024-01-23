@@ -24,7 +24,8 @@ const userSchema = new Schema({
     Istr_txt: String,
     weight_s: Number,
     password: String,
-    isLogin: Number
+    isLogin: Number,
+    appVersion: String,
 });
 
 module.exports = mongoose.model('Users', userSchema, 'users');
