@@ -207,27 +207,145 @@ exports.getACRDetailsByDate = async (req, res) => {
         });
     }
 };
+exports.getExportACRDetailsByDateRTV = async (req, res) => {
+    try {
+        const date = req.body.date;
+        const type = req.body.type;
+       
+
+        const channels_tv = ['RAI1', 'RAI2', 'RAI3', 'RETE4', 'CANALE5', 'ITALIA1', 'LA7'];
+
+        const regexPattern = new RegExp(`^${date}`);
+
+        let acrDetails = [];
+        if (type === 'TV') {
+            acrDetails = await ACRLog.find({
+                recorded_at: { $regex: date },
+                acr_result: { $in: channels_tv },
+            });
+        } else {
+            acrDetails = await ACRLog.find({
+                recorded_at: { $regex: date },
+                acr_result: { $nin: channels_tv },
+            });
+        }
+
+        // Check if there are any records
+        if (acrDetails.length === 0) {
+            return res.status(404).send({
+                status: 'success',
+                message: 'No ACR details found for the given date and type.',
+            });
+        }
+
+        // Export data to CSV
+        const csvWriter = createCsvWriter({
+            path: `ACR_Details_${date}.csv`,
+            header: [
+                { id: '_id', title: 'ID' },
+                { id: 'user_id', title: 'User ID' },
+                { id: 'uuid', title: 'UUID' },
+                { id: 'imei', title: 'IMEI' },
+                { id: 'model', title: 'Model' },
+                { id: 'brand', title: 'Brand' },
+                { id: 'acr_result', title: 'ACR Result' },
+                { id: 'duration', title: 'Duration' },
+                { id: 'longitude', title: 'Longitude' },
+                { id: 'latitude', title: 'Latitude' },
+                { id: 'location_address', title: 'Location Address' },
+                { id: 'recorded_at', title: 'Recorded At' },
+                { id: 'registered_at', title: 'Registered At' },
+            ],
+        });
+        await csvWriter.writeRecords(acrDetails);
+
+        // Export data to Excel
+        const wb = new Excel.Workbook();
+        const ws = wb.addWorksheet('ACR_Details');
+
+        // Add headers to the Excel sheet
+        const headers = [
+            'ID',
+            'User ID',
+            'UUID',
+            'IMEI',
+            'Model',
+            'Brand',
+            'ACR Result',
+            'Duration',
+            'Longitude',
+            'Latitude',
+            'Location Address',
+            'Recorded At',
+            'Registered At',
+        ];
+        headers.forEach((header, index) => {
+            ws.cell(1, index + 1).string(header);
+        });
+
+        // Add data to the Excel sheet
+        acrDetails.forEach((record, rowIndex) => {
+            Object.keys(record).forEach((field, columnIndex) => {
+                ws.cell(rowIndex + 2, columnIndex + 1).string(record[field].toString());
+            });
+        });
+
+        // Save the Excel file
+        const excelFilePath = `ACR_Details_${date}.xlsx`;
+        wb.write(excelFilePath, (err, stats) => {
+            if (err) {
+                console.error('Error writing Excel file:', err);
+                return res.status(500).send({
+                    status: 'error',
+                    message: 'Failed to export ACR details to Excel.',
+                });
+            }
+
+            // Send the files as a response
+            res.attachment('ACR_Details.zip');
+            res.set('Content-Type', 'application/zip');
+            res.sendFile(excelFilePath);
+        });
+    } catch (error) {
+        console.error('Error fetching or exporting ACR type details by date:', error);
+        res.status(500).send({
+            status: 'error',
+            message: 'Failed to fetch or export ACR type details by date',
+        });
+    }
+};
+
 exports.getACRDetailsByDateRTV = async (req, res) => {
     try {
-        const  date = req.body.date; // Assuming the parameters are sent in the query string
-        const  type = req.body.type; // Assuming the parameters are sent in the query string
-        const channels_tv = ['RAI1','RAI2','RAI3','RETE4','CANALE5','ITALIA1','LA7'];
+        const date = req.body.date;
+        const type = req.body.type;
+        const wonull = req.body.notnull; 
+
+        const channels_tv = ['RAI1', 'RAI2', 'RAI3', 'RETE4', 'CANALE5', 'ITALIA1', 'LA7'];
+        
         // Handle the date format conversion if necessary to match MongoDB date format
-        // Use the date to fetch ACR details from MongoDB
-        // Modify this part according to your database schema and retrieval logic
         // Assuming date is in the format 'dd/MM/yyyy', adjust the regex pattern accordingly
         const regexPattern = new RegExp(`^${date}`);
-        console.log('Regex Pattern:', date); // Log the regex pattern
-        // Query ACR details based on the regex pattern for recorded_at
-        let acrDetails = [];
-        if (type ==='TV') 
-        acrDetails = await ACRLog.find(
-            {recorded_at: {$regex: date},      acr_result: { $in: channels_tv }});
-        else
-        acrDetails = await ACRLog.find(
-            {recorded_at: {$regex: date},      acr_result: { $nin: channels_tv }});
+        console.log('Regex Pattern:', date);
 
-        //  console.log(acrDetails);
+        // Construct the base query for ACRLog
+        const baseQuery = { recorded_at: { $regex: date } };
+
+        // Add notnull filter if provided
+        if (wonull === 'yes') {
+            baseQuery.acr_result = { $ne: "NULL" };
+        }
+        
+        // Add channel filter based on the type
+        if (type === 'TV') {
+            baseQuery.acr_result = { ...baseQuery.acr_result, $in: channels_tv };
+        } else {
+            baseQuery.acr_result = { ...baseQuery.acr_result, $nin: channels_tv };
+        }
+
+        // Query ACR details based on the constructed query
+        const acrDetails = await ACRLog.find(baseQuery);
+
         res.send({
             status: 'success',
             acrDetails,
