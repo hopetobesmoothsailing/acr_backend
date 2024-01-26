@@ -5,6 +5,7 @@ const Counters = require('../model/Counter');
 const md5 = require("md5");
 const nodemailer = require('nodemailer');
 const moment = require("moment");
+const createCsvWriter = require('csv-writer').createObjectCsvWriter;
 
 
 exports.signup = async (req, res) => {
@@ -207,82 +208,88 @@ exports.getACRDetailsByDate = async (req, res) => {
         });
     }
 };
+const ACRLog = require('../models/ACRLog');
+const createCsvWriter = require('csv-writer').createObjectCsvWriter;
+
 exports.getExportACRDetailsByDateRTV = async (req, res) => {
     try {
         const date = req.body.date;
-        const recorded_at_date = date.replace(/-/g, "/"); // Format date to match MongoDB date format
+        const channels_tv = ['RAI1', 'RAI2', 'RAI3', 'RETE4', 'CANALE5', 'ITALIA1', 'LA7'];
 
         const pipeline = [
             {
                 "$match": {
-                    "recorded_at": { "$regex": recorded_at_date },
-                    "acr_result": { "$in": ['RAI1', 'RAI2', 'RAI3', 'RETE4', 'CANALE5', 'ITALIA1', 'LA7'] }
+                    "recorded_at": { "$regex": date },
+                    "acr_result": { "$in": channels_tv },
                 }
+            },
+            {
+                "$lookup": {
+                    "from": "users",
+                    "localField": "user_id",
+                    "foreignField": "_id",
+                    "as": "user_data"
+                }
+            },
+            {
+                "$unwind": "$user_data"
             }
         ];
 
         const acrDetails = await ACRLog.aggregate(pipeline);
 
         if (acrDetails.length === 0) {
-            return res.status(404).send({
-                status: 'success',
+            return res.status(404).json({
+                status: 'error',
                 message: 'No ACR details found for the given date and type.',
             });
         }
 
-        const df = pd.DataFrame(acrDetails);
+        const csvWriter = createCsvWriter({
+            path: `ACR_Details_${date}.csv`,
+            header: [
+                { id: '_id', title: 'ID' },
+                { id: 'user_id', title: 'User ID' },
+                { id: 'uuid', title: 'UUID' },
+                { id: 'imei', title: 'IMEI' },
+                { id: 'model', title: 'Model' },
+                { id: 'brand', title: 'Brand' },
+                { id: 'acr_result', title: 'ACR Result' },
+                { id: 'recorded_at', title: 'Recorded At' },
+                { id: 'name', title: 'Name' },
+                { id: 'ID', title: 'ID' },
+                { id: 'email', title: 'Email' },
+                { id: 'Gen_cod', title: 'Gen Cod' },
+                { id: 'Gen_txt', title: 'Gen Txt' },
+                { id: 'Age_cod', title: 'Age Cod' },
+                { id: 'Age_txt', title: 'Age Txt' },
+                { id: 'Reg_cod', title: 'Reg Cod' },
+                { id: 'Reg_txt', title: 'Reg Txt' },
+                { id: 'Area_cod', title: 'Area Cod' },
+                { id: 'Area_txt', title: 'Area Txt' },
+                { id: 'PV_cod', title: 'PV Cod' },
+                { id: 'PV_txt', title: 'PV Txt' },
+                { id: 'AC_cod', title: 'AC Cod' },
+                { id: 'AC_txt', title: 'AC Txt' },
+                { id: 'Prof_cod', title: 'Prof Cod' },
+                { id: 'Prof_txt', title: 'Prof Txt' },
+                { id: 'Istr_cod', title: 'Istr Cod' },
+                { id: 'Istr_txt', title: 'Istr Txt' },
+                { id: 'weight_s', title: 'Weight S' },
+                { id: 'isLogin', title: 'Is Login' },
+            ],
+        });
 
-        // Flatten nested columns from user_data
-        const df_user_data = pd.json_normalize(df['user_data']);
+        await csvWriter.writeRecords(acrDetails);
 
-        // Combine DataFrames
-        const df_combined = pd.concat([df, df_user_data], axis=1);
-
-        // Specify the columns you want to export
-        const columns_to_export = [
-            "_id",
-            "user_id",
-            "uuid",
-            "imei",
-            "model",
-            "brand",
-            "acr_result",
-            "recorded_at", // Adjust the column name as needed
-            "name",
-            "ID",
-            "email",
-            "Gen_cod",
-            "Gen_txt",
-            "Age_cod",
-            "Age_txt",
-            "Reg_cod",
-            "Reg_txt",
-            "Area_cod",
-            "Area_txt",
-            "PV_cod",
-            "PV_txt",
-            "AC_cod",
-            "AC_txt",
-            "Prof_cod",
-            "Prof_txt",
-            "Istr_cod",
-            "Istr_txt",
-            "weight_s",
-            "isLogin"
-        ];
-
-        // Filter DataFrame columns
-        const df_export = df_combined[columns_to_export];
-
-        // Export the DataFrame to CSV
-        const csv_filename = `ACR_Details_${date}.csv`;
-        df_export.to_csv(csv_filename, index=false);
-
-        res.attachment(csv_filename);
-        res.sendFile(csv_filename);
+        res.status(200).json({
+            status: 'success',
+            message: 'ACR details exported successfully.',
+            filename: `ACR_Details_${date}.csv`
+        });
     } catch (error) {
         console.error('Error fetching or exporting ACR type details by date:', error);
-        res.status(500).send({
+        res.status(500).json({
             status: 'error',
             message: 'Failed to fetch or export ACR type details by date',
         });
