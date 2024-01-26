@@ -208,8 +208,6 @@ exports.getACRDetailsByDate = async (req, res) => {
         });
     }
 };
-const ACRLog = require('../models/ACRLog');
-const createCsvWriter = require('csv-writer').createObjectCsvWriter;
 
 exports.getExportACRDetailsByDateRTV = async (req, res) => {
     try {
