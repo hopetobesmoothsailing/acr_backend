@@ -210,27 +210,19 @@ exports.getACRDetailsByDate = async (req, res) => {
 exports.getExportACRDetailsByDateRTV = async (req, res) => {
     try {
         const date = req.body.date;
-        const type = req.body.type;
-       
+        const recorded_at_date = date.replace(/-/g, "/"); // Format date to match MongoDB date format
 
-        const channels_tv = ['RAI1', 'RAI2', 'RAI3', 'RETE4', 'CANALE5', 'ITALIA1', 'LA7'];
+        const pipeline = [
+            {
+                "$match": {
+                    "recorded_at": { "$regex": recorded_at_date },
+                    "acr_result": { "$in": ['RAI1', 'RAI2', 'RAI3', 'RETE4', 'CANALE5', 'ITALIA1', 'LA7'] }
+                }
+            }
+        ];
 
-        const regexPattern = new RegExp(`^${date}`);
+        const acrDetails = await ACRLog.aggregate(pipeline);
 
-        let acrDetails = [];
-        if (type === 'TV') {
-            acrDetails = await ACRLog.find({
-                recorded_at: { $regex: date },
-                acr_result: { $in: channels_tv },
-            });
-        } else {
-            acrDetails = await ACRLog.find({
-                recorded_at: { $regex: date },
-                acr_result: { $nin: channels_tv },
-            });
-        }
-
-        // Check if there are any records
         if (acrDetails.length === 0) {
             return res.status(404).send({
                 status: 'success',
@@ -238,74 +230,56 @@ exports.getExportACRDetailsByDateRTV = async (req, res) => {
             });
         }
 
-        // Export data to CSV
-        const csvWriter = createCsvWriter({
-            path: `ACR_Details_${date}.csv`,
-            header: [
-                { id: '_id', title: 'ID' },
-                { id: 'user_id', title: 'User ID' },
-                { id: 'uuid', title: 'UUID' },
-                { id: 'imei', title: 'IMEI' },
-                { id: 'model', title: 'Model' },
-                { id: 'brand', title: 'Brand' },
-                { id: 'acr_result', title: 'ACR Result' },
-                { id: 'duration', title: 'Duration' },
-                { id: 'longitude', title: 'Longitude' },
-                { id: 'latitude', title: 'Latitude' },
-                { id: 'location_address', title: 'Location Address' },
-                { id: 'recorded_at', title: 'Recorded At' },
-                { id: 'registered_at', title: 'Registered At' },
-            ],
-        });
-        await csvWriter.writeRecords(acrDetails);
+        const df = pd.DataFrame(acrDetails);
 
-        // Export data to Excel
-        const wb = new Excel.Workbook();
-        const ws = wb.addWorksheet('ACR_Details');
+        // Flatten nested columns from user_data
+        const df_user_data = pd.json_normalize(df['user_data']);
 
-        // Add headers to the Excel sheet
-        const headers = [
-            'ID',
-            'User ID',
-            'UUID',
-            'IMEI',
-            'Model',
-            'Brand',
-            'ACR Result',
-            'Duration',
-            'Longitude',
-            'Latitude',
-            'Location Address',
-            'Recorded At',
-            'Registered At',
+        // Combine DataFrames
+        const df_combined = pd.concat([df, df_user_data], axis=1);
+
+        // Specify the columns you want to export
+        const columns_to_export = [
+            "_id",
+            "user_id",
+            "uuid",
+            "imei",
+            "model",
+            "brand",
+            "acr_result",
+            "recorded_at", // Adjust the column name as needed
+            "name",
+            "ID",
+            "email",
+            "Gen_cod",
+            "Gen_txt",
+            "Age_cod",
+            "Age_txt",
+            "Reg_cod",
+            "Reg_txt",
+            "Area_cod",
+            "Area_txt",
+            "PV_cod",
+            "PV_txt",
+            "AC_cod",
+            "AC_txt",
+            "Prof_cod",
+            "Prof_txt",
+            "Istr_cod",
+            "Istr_txt",
+            "weight_s",
+            "isLogin"
         ];
-        headers.forEach((header, index) => {
-            ws.cell(1, index + 1).string(header);
-        });
 
-        // Add data to the Excel sheet
-        acrDetails.forEach((record, rowIndex) => {
-            Object.keys(record).forEach((field, columnIndex) => {
-                ws.cell(rowIndex + 2, columnIndex + 1).string(record[field].toString());
-            });
-        });
+        // Filter DataFrame columns
+        const df_export = df_combined[columns_to_export];
 
-        // Save the Excel file
-        const excelFilePath = `ACR_Details_${date}.xlsx`;
-        wb.write(excelFilePath, (err, stats) => {
-            if (err) {
-                console.error('Error writing Excel file:', err);
-                return res.status(500).send({
-                    status: 'error',
-                    message: 'Failed to export ACR details to Excel.',
-                });
-            }
+        // Export the DataFrame to CSV
+        const csv_filename = `ACR_Details_${date}.csv`;
+        df_export.to_csv(csv_filename, index=false);
 
-            // Send the files as a response
-            res.attachment('ACR_Details.zip');
-            res.set('Content-Type', 'application/zip');
-            res.sendFile(excelFilePath);
-        });
+        res.attachment(csv_filename);
+        res.sendFile(csv_filename);
     } catch (error) {
         console.error('Error fetching or exporting ACR type details by date:', error);
         res.status(500).send({
