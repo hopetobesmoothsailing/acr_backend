@@ -303,7 +303,7 @@ exports.getExportACRDetailsByDateRTV = async (req, res) => {
         await csvWriter.writeRecords(acrDetails);
 
         const filename = `ACR_Details_${formattedDate}.csv`;
-        const filePath = `${__dirname}/../${filename}`;
+        const filePath = `/tmp/${filename}`;
 
         res.setHeader('Content-Type', 'text/csv');
         res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
