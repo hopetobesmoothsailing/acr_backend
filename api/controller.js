@@ -6,6 +6,8 @@ const md5 = require("md5");
 const nodemailer = require('nodemailer');
 const moment = require("moment");
 const createCsvWriter = require('csv-writer').createObjectCsvWriter;
+const fs = require('fs');
+
 
 
 exports.signup = async (req, res) => {
@@ -212,6 +214,7 @@ exports.getACRDetailsByDate = async (req, res) => {
 exports.getExportACRDetailsByDateRTV = async (req, res) => {
     try {
         const date = req.body.date;
+        const formattedDate = date.replace(/\//g, '-');
         const channels_tv = ['RAI1', 'RAI2', 'RAI3', 'RETE4', 'CANALE5', 'ITALIA1', 'LA7'];
 
         const pipeline = [
@@ -242,10 +245,9 @@ exports.getExportACRDetailsByDateRTV = async (req, res) => {
                 message: 'No ACR details found for the given date and type.',
             });
         }
-        const recorded_at_date = date.replace(/\//g, "-"); // Format date to match MongoDB date format
-        console.log("date normalized",recorded_at_date)
+
         const csvWriter = createCsvWriter({
-            path: `RadioMonitor_Details_${recorded_at_date}.csv`,
+            path: `ACR_Details_${formattedDate}.csv`,
             header: [
                 { id: '_id', title: 'ID' },
                 { id: 'user_id', title: 'User ID' },
@@ -281,11 +283,24 @@ exports.getExportACRDetailsByDateRTV = async (req, res) => {
 
         await csvWriter.writeRecords(acrDetails);
 
-        res.status(200).json({
-            status: 'success',
-            message: 'Dettagli esportati correttamente.',
-            filename: `RadioMonitor_Details_${recorded_at_date}.csv`
+        const filename = `ACR_Details_${formattedDate}.csv`;
+        const filePath = `${__dirname}/../${filename}`;
+
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
+        res.download(filePath, filename, (err) => {
+            if (err) {
+                console.error('Error sending file:', err);
+                return res.status(500).json({
+                    status: 'error',
+                    message: 'Failed to send CSV file.',
+                });
+            }
+
+            // Remove the file after it's been downloaded
+            fs.unlinkSync(filePath);
         });
+
     } catch (error) {
         console.error('Error fetching or exporting ACR type details by date:', error);
         res.status(500).json({
