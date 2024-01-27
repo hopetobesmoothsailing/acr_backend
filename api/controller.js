@@ -28,6 +28,12 @@ exports.signup = async (req, res) => {
     const Istr_cod = req.body.istr_cod === '-' ? 0 : req.body.istr_cod;
     const Istr_txt = req.body.istr_txt;
     const password = md5(req.body.password);
+    const weight_s = req.body.weight_s;
+    const Age2_cod = req.body.age2_cod === '-' ? 0 : req.body.age2_cod;
+    const Age2_txt = req.body.age2_txt === '-' ? 0 : req.body.age2_txt;
+    const Age3_cod = req.body.age3_cod === '-' ? 0 : req.body.age3_cod;
+    const Age3_txt = req.body.age3_txt === '-' ? 0 : req.body.age3_txt;
+    const device = req.body.device
     const newUser = Users({
         _id: await getNextSequenceValue('users'),
         ID,
@@ -49,9 +55,15 @@ exports.signup = async (req, res) => {
         Prof_txt,
         Istr_cod,
         Istr_txt,
-        weight_s: 1.0,
+        weight_s,
         password,
-        isLogin: 0
+        isLogin: 0,
+        role: 4,
+        device,
+        Age2_cod,
+        Age2_txt,
+        Age3_cod,
+        Age3_txt
     });
     if ((await Users.find({email}, {_id: 0, __v: 0}).exec()).length > 0) {
         await Users.findOneAndUpdate({email}, {
@@ -70,9 +82,16 @@ exports.signup = async (req, res) => {
             Prof_cod,
             Prof_txt,
             Istr_cod,
-            Istr_txt
+            Istr_txt,
+            role: 4,
+            weight_s,
+            device,
+            Age2_cod,
+            Age2_txt,
+            Age3_cod,
+            Age3_txt
         });
-        res.send({status: 'already existed'});
+        res.send({status: 'success', comment: 'user updated'});
     } else {
         const result = await newUser.save();
         if (result !== undefined) {

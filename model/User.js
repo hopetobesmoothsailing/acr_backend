@@ -26,6 +26,12 @@ const userSchema = new Schema({
     password: String,
     isLogin: Number,
     appVersion: String,
+    role: Number,
+    device: String,
+    Age2_cod: Number,
+    Age2_txt: String,
+    Age3_cod: Number,
+    Age3_txt: String
 });
 
 module.exports = mongoose.model('Users', userSchema, 'users');
