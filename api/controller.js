@@ -283,8 +283,8 @@ exports.getExportACRDetailsByDateRTV = async (req, res) => {
 
         res.status(200).json({
             status: 'success',
-            message: 'ACR details exported successfully.',
-            filename: `ACR_Details_${date}.csv`
+            message: 'Dettagli esportati correttamente.',
+            filename: `RadioMonitor_Details_${recorded_at_date}.csv`
         });
     } catch (error) {
         console.error('Error fetching or exporting ACR type details by date:', error);
