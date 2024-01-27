@@ -242,7 +242,7 @@ exports.getExportACRDetailsByDateRTV = async (req, res) => {
                 message: 'No ACR details found for the given date and type.',
             });
         }
-        const recorded_at_date = date.replace(/-/g, "/"); // Format date to match MongoDB date format
+        const recorded_at_date = date.replace(/\//g, "-"); // Format date to match MongoDB date format
         console.log("date normalized",recorded_at_date)
         const csvWriter = createCsvWriter({
             path: `RadioMonitor_Details_${recorded_at_date}.csv`,
