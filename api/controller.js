@@ -242,9 +242,10 @@ exports.getExportACRDetailsByDateRTV = async (req, res) => {
                 message: 'No ACR details found for the given date and type.',
             });
         }
-
+        const formattedDate = date.format('DD-MM-YYYY');
+          
         const csvWriter = createCsvWriter({
-            path: `ACR_Details_${date}.csv`,
+            path: `RadioMonitor_Details_${formattedDate}.csv`,
             header: [
                 { id: '_id', title: 'ID' },
                 { id: 'user_id', title: 'User ID' },
