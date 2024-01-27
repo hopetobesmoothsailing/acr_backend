@@ -18,4 +18,6 @@ router.post('/sendReminderEmailToInactiveUsers', Controller.sendReminderEmailToI
 router.post('/getAppStatusUsers', Controller.getAppStatusUsers);
 router.post('/getAppActivatedUsers', Controller.getAppActivatedUsers);
 router.post('/getACRDetailsByDateAndUser', Controller.getACRDetailsByDateAndUser);
+router.post('/getExportACRDetailsByDateRTV', Controller.getExportACRDetailsByDateRTV);
+
 module.exports = router;

@@ -5,6 +5,9 @@ const Counters = require('../model/Counter');
 const md5 = require("md5");
 const nodemailer = require('nodemailer');
 const moment = require("moment");
+const createCsvWriter = require('csv-writer').createObjectCsvWriter;
+const fs = require('fs');
+
 
 
 exports.signup = async (req, res) => {
@@ -226,40 +229,44 @@ exports.getACRDetailsByDate = async (req, res) => {
         });
     }
 };
+
 exports.getExportACRDetailsByDateRTV = async (req, res) => {
     try {
         const date = req.body.date;
-        const type = req.body.type;
-       
-
+        const formattedDate = date.replace(/\//g, '-');
         const channels_tv = ['RAI1', 'RAI2', 'RAI3', 'RETE4', 'CANALE5', 'ITALIA1', 'LA7'];
 
-        const regexPattern = new RegExp(`^${date}`);
+        const pipeline = [
+            {
+                "$match": {
+                    "recorded_at": { "$regex": date },
+                    "acr_result": { "$in": channels_tv },
+                }
+            },
+            {
+                "$lookup": {
+                    "from": "users",
+                    "localField": "user_id",
+                    "foreignField": "_id",
+                    "as": "user_data"
+                }
+            },
+            {
+                "$unwind": "$user_data"
+            }
+        ];
 
-        let acrDetails = [];
-        if (type === 'TV') {
-            acrDetails = await ACRLog.find({
-                recorded_at: { $regex: date },
-                acr_result: { $in: channels_tv },
-            });
-        } else {
-            acrDetails = await ACRLog.find({
-                recorded_at: { $regex: date },
-                acr_result: { $nin: channels_tv },
-            });
-        }
+        const acrDetails = await ACRLog.aggregate(pipeline);
 
-        // Check if there are any records
         if (acrDetails.length === 0) {
-            return res.status(404).send({
-                status: 'success',
+            return res.status(404).json({
+                status: 'error',
                 message: 'No ACR details found for the given date and type.',
             });
         }
 
-        // Export data to CSV
         const csvWriter = createCsvWriter({
-            path: `ACR_Details_${date}.csv`,
+            path: `ACR_Details_${formattedDate}.csv`,
             header: [
                 { id: '_id', title: 'ID' },
                 { id: 'user_id', title: 'User ID' },
@@ -268,66 +275,54 @@ exports.getExportACRDetailsByDateRTV = async (req, res) => {
                 { id: 'model', title: 'Model' },
                 { id: 'brand', title: 'Brand' },
                 { id: 'acr_result', title: 'ACR Result' },
-                { id: 'duration', title: 'Duration' },
-                { id: 'longitude', title: 'Longitude' },
-                { id: 'latitude', title: 'Latitude' },
-                { id: 'location_address', title: 'Location Address' },
                 { id: 'recorded_at', title: 'Recorded At' },
-                { id: 'registered_at', title: 'Registered At' },
+                { id: 'name', title: 'Name' },
+                { id: 'ID', title: 'ID' },
+                { id: 'email', title: 'Email' },
+                { id: 'Gen_cod', title: 'Gen Cod' },
+                { id: 'Gen_txt', title: 'Gen Txt' },
+                { id: 'Age_cod', title: 'Age Cod' },
+                { id: 'Age_txt', title: 'Age Txt' },
+                { id: 'Reg_cod', title: 'Reg Cod' },
+                { id: 'Reg_txt', title: 'Reg Txt' },
+                { id: 'Area_cod', title: 'Area Cod' },
+                { id: 'Area_txt', title: 'Area Txt' },
+                { id: 'PV_cod', title: 'PV Cod' },
+                { id: 'PV_txt', title: 'PV Txt' },
+                { id: 'AC_cod', title: 'AC Cod' },
+                { id: 'AC_txt', title: 'AC Txt' },
+                { id: 'Prof_cod', title: 'Prof Cod' },
+                { id: 'Prof_txt', title: 'Prof Txt' },
+                { id: 'Istr_cod', title: 'Istr Cod' },
+                { id: 'Istr_txt', title: 'Istr Txt' },
+                { id: 'weight_s', title: 'Weight S' },
+                { id: 'isLogin', title: 'Is Login' },
             ],
         });
+
         await csvWriter.writeRecords(acrDetails);
 
-        // Export data to Excel
-        const wb = new Excel.Workbook();
-        const ws = wb.addWorksheet('ACR_Details');
+        const filename = `ACR_Details_${formattedDate}.csv`;
+        const filePath = `${__dirname}/../${filename}`;
 
-        // Add headers to the Excel sheet
-        const headers = [
-            'ID',
-            'User ID',
-            'UUID',
-            'IMEI',
-            'Model',
-            'Brand',
-            'ACR Result',
-            'Duration',
-            'Longitude',
-            'Latitude',
-            'Location Address',
-            'Recorded At',
-            'Registered At',
-        ];
-        headers.forEach((header, index) => {
-            ws.cell(1, index + 1).string(header);
-        });
-
-        // Add data to the Excel sheet
-        acrDetails.forEach((record, rowIndex) => {
-            Object.keys(record).forEach((field, columnIndex) => {
-                ws.cell(rowIndex + 2, columnIndex + 1).string(record[field].toString());
-            });
-        });
-
-        // Save the Excel file
-        const excelFilePath = `ACR_Details_${date}.xlsx`;
-        wb.write(excelFilePath, (err, stats) => {
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
+        res.download(filePath, filename, (err) => {
             if (err) {
-                console.error('Error writing Excel file:', err);
-                return res.status(500).send({
+                console.error('Error sending file:', err);
+                return res.status(500).json({
                     status: 'error',
-                    message: 'Failed to export ACR details to Excel.',
+                    message: 'Failed to send CSV file.',
                 });
             }
 
-            // Send the files as a response
-            res.attachment('ACR_Details.zip');
-            res.set('Content-Type', 'application/zip');
-            res.sendFile(excelFilePath);
+            // Remove the file after it's been downloaded
+            fs.unlinkSync(filePath);
         });
+
     } catch (error) {
         console.error('Error fetching or exporting ACR type details by date:', error);
-        res.status(500).send({
+        res.status(500).json({
             status: 'error',
             message: 'Failed to fetch or export ACR type details by date',
         });
