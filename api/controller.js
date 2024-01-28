@@ -304,7 +304,6 @@ exports.getExportACRDetailsByDateRTV = async (req, res) => {
 
         const filename = `ACR_Details_${formattedDate}.csv`;
         const filePath = `${__dirname}/../${filename}`;
-        console.log("filepath",filePath);
 
         res.setHeader('Content-Type', 'text/csv');
         res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
