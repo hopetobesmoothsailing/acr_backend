@@ -5,7 +5,8 @@ const Counters = require('../model/Counter');
 const md5 = require("md5");
 const nodemailer = require('nodemailer');
 const moment = require("moment");
-const createCsvWriter = require('csv-writer').createObjectCsvWriter;
+// const createCsvWriter = require('csv-writer').createObjectCsvWriter;
+const createCsvStringifier = require('csv-writer').createObjectCsvStringifier;
 const fs = require('fs');
 
 
@@ -265,11 +266,8 @@ exports.getExportACRDetailsByDateRTV = async (req, res) => {
             });
         }
 
-        const filename = `ACR_Details_${formattedDate}.csv`;
-        const filePath = `${__dirname}/../${filename}`;
-        console.log("filePath",filePath);
-        const csvWriter = createCsvWriter({
-            path: `ACR_Details_${formattedDate}.csv`,
+
+        const csvStringifier = createCsvStringifier({
             header: [
                 { id: '_id', title: 'ID' },
                 { id: 'user_id', title: 'User ID' },
@@ -303,24 +301,11 @@ exports.getExportACRDetailsByDateRTV = async (req, res) => {
             ],
         });
 
-        await csvWriter.writeRecords(acrDetails);
-
+        const csvData = csvStringifier.getHeaderString() + csvStringifier.stringifyRecords(acrDetails);
 
         res.setHeader('Content-Type', 'text/csv');
-        res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
-        res.download(filePath, filename, (err) => {
-            if (err) {
-                console.error('Error sending file:', err);
-                return res.status(500).json({
-                    status: 'error',
-                    message: 'Failed to send CSV file.',
-                });
-            }
-
-            // Remove the file after it's been downloaded
-            fs.unlinkSync(filePath);
-        });
-
+        res.setHeader('Content-Disposition', `attachment; filename=ACR_Details_${formattedDate}.csv`);
+        res.status(200).send(csvData);
     } catch (error) {
         console.error('Error fetching or exporting ACR type details by date:', error);
         res.status(500).json({
