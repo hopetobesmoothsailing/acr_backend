@@ -241,7 +241,7 @@ exports.getExportACRDetailsByDateRTV = async (req, res) => {
             {
                 "$match": {
                     "recorded_at": { "$regex": date },
-                    "acr_result": { "$in": channels_tv },
+                    "acr_result": { "$nin": channels_tv },
                 }
             },
             {
