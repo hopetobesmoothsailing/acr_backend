@@ -265,8 +265,11 @@ exports.getExportACRDetailsByDateRTV = async (req, res) => {
             });
         }
 
+        const filename = `ACR_Details_${formattedDate}.csv`;
+        const filePath = `${__dirname}/../${filename}`;
+
         const csvWriter = createCsvWriter({
-            path: `ACR_Details_${formattedDate}.csv`,
+            path: `${filePath}`,
             header: [
                 { id: '_id', title: 'ID' },
                 { id: 'user_id', title: 'User ID' },
@@ -302,8 +305,6 @@ exports.getExportACRDetailsByDateRTV = async (req, res) => {
 
         await csvWriter.writeRecords(acrDetails);
 
-        const filename = `ACR_Details_${formattedDate}.csv`;
-        const filePath = `${__dirname}/../${filename}`;
 
         res.setHeader('Content-Type', 'text/csv');
         res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
