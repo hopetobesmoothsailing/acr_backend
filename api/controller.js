@@ -315,6 +315,91 @@ exports.getExportACRDetailsByDateRTV = async (req, res) => {
     }
 };
 
+exports.getCsvByDateRTV = async (req, res) => {
+    try {
+        const date = req.body.date;
+        const formattedDate = date.replace(/\//g, '-');
+        const channels_tv = ['RAI1', 'RAI2', 'RAI3', 'RETE4', 'CANALE5', 'ITALIA1', 'LA7'];
+
+        const pipeline = [
+            {
+                "$match": {
+                    "recorded_at": { "$regex": date },
+                   // "acr_result": { "$nin": channels_tv },
+                }
+            },
+            {
+                "$lookup": {
+                    "from": "users",
+                    "localField": "user_id",
+                    "foreignField": "_id",
+                    "as": "user_data"
+                }
+            },
+            {
+                "$unwind": "$user_data"
+            }
+        ];
+
+        const acrDetails = await ACRLog.aggregate(pipeline);
+
+        if (acrDetails.length === 0) {
+            return res.status(404).json({
+                status: 'error',
+                message: 'No ACR details found for the given date and type.',
+            });
+        }
+
+
+        const csvStringifier = createCsvStringifier({
+            header: [
+                { id: '_id', title: 'ID' },
+                { id: 'user_id', title: 'User ID' },
+                { id: 'uuid', title: 'UUID' },
+                { id: 'imei', title: 'IMEI' },
+                { id: 'model', title: 'Model' },
+                { id: 'brand', title: 'Brand' },
+                { id: 'acr_result', title: 'ACR Result' },
+                { id: 'recorded_at', title: 'Recorded At' },
+                { id: 'name', title: 'Name' },
+                { id: 'ID', title: 'ID' },
+                { id: 'email', title: 'Email' },
+                { id: 'Gen_cod', title: 'Gen Cod' },
+                { id: 'Gen_txt', title: 'Gen Txt' },
+                { id: 'Age_cod', title: 'Age Cod' },
+                { id: 'Age_txt', title: 'Age Txt' },
+                { id: 'Reg_cod', title: 'Reg Cod' },
+                { id: 'Reg_txt', title: 'Reg Txt' },
+                { id: 'Area_cod', title: 'Area Cod' },
+                { id: 'Area_txt', title: 'Area Txt' },
+                { id: 'PV_cod', title: 'PV Cod' },
+                { id: 'PV_txt', title: 'PV Txt' },
+                { id: 'AC_cod', title: 'AC Cod' },
+                { id: 'AC_txt', title: 'AC Txt' },
+                { id: 'Prof_cod', title: 'Prof Cod' },
+                { id: 'Prof_txt', title: 'Prof Txt' },
+                { id: 'Istr_cod', title: 'Istr Cod' },
+                { id: 'Istr_txt', title: 'Istr Txt' },
+                { id: 'weight_s', title: 'Weight S' },
+                { id: 'isLogin', title: 'Is Login' },
+            ],
+        });
+
+        const csvData = csvStringifier.getHeaderString() + csvStringifier.stringifyRecords(acrDetails);
+
+        res.send({
+            status: 'success',
+            csvData,
+        });
+    } catch (error) {
+        console.error('Error fetching or exporting csv data by date:', error);
+        res.status(500).json({
+            status: 'error',
+            message: 'Failed to fetch or export csv data details by date',
+        });
+    }
+};
+
 exports.getACRDetailsByDateRTV = async (req, res) => {
     try {
         const date = req.body.date;

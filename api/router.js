@@ -19,5 +19,6 @@ router.post('/getAppStatusUsers', Controller.getAppStatusUsers);
 router.post('/getAppActivatedUsers', Controller.getAppActivatedUsers);
 router.post('/getACRDetailsByDateAndUser', Controller.getACRDetailsByDateAndUser);
 router.post('/getExportACRDetailsByDateRTV', Controller.getExportACRDetailsByDateRTV);
+router.post('/getCsvByDateRTV', Controller.getExportACRDetailsByDateRTV);
 
 module.exports = router;
