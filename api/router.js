@@ -1,6 +1,9 @@
 const express = require('express')
 const router = express.Router();
 const Controller = require('./controller')
+const multer = require('multer');
+// Setup storage engine
+const upload = multer({ dest: 'uploads/' });
 
 router.post('/signup', Controller.signup)
 router.post('/login', Controller.login)
@@ -19,6 +22,8 @@ router.post('/getAppStatusUsers', Controller.getAppStatusUsers);
 router.post('/getAppActivatedUsers', Controller.getAppActivatedUsers);
 router.post('/getACRDetailsByDateAndUser', Controller.getACRDetailsByDateAndUser);
 router.post('/getExportACRDetailsByDateRTV', Controller.getExportACRDetailsByDateRTV);
-router.post('/getCsvByDateRTV', Controller.getExportACRDetailsByDateRTV);
+router.post('/getCsvByDateRTV', Controller.getCsvByDateRTV);
+router.post('/uploadPalinsestom', upload.single('file'), Controller.uploadPalinsestom);
+router.post('/getPalinsestomByDateAndChannel', Controller.getPalinsestomByDateAndChannel);
 
 module.exports = router;

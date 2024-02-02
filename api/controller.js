@@ -4,7 +4,24 @@ const Palinsesto = require('../model/Palinsesto');
 const Counters = require('../model/Counter');
 const md5 = require("md5");
 const nodemailer = require('nodemailer');
-const moment = require("moment");
+// const moment = require("moment");
+const moment = require('moment-timezone');
+const multer = require('multer');
+const xlsx = require('xlsx');
+const Palinsestom = require('../model/Palinsestom');
+
+// Setup storage engine
+const storage = multer.diskStorage({
+    destination: function(req, file, cb) {
+        cb(null, 'uploads/');  // Ensure this directory exists
+    },
+    filename: function(req, file, cb) {
+        cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
+    }
+});
+
+const upload = multer({ dest: 'uploads/' });
+
 // const createCsvWriter = require('csv-writer').createObjectCsvWriter;
 const createCsvStringifier = require('csv-writer').createObjectCsvStringifier;
 const fs = require('fs');
@@ -235,14 +252,11 @@ exports.getExportACRDetailsByDateRTV = async (req, res) => {
     try {
         const date = req.body.date;
         const formattedDate = date.replace(/\//g, '-');
-        const channels_tv = ['RAI1', 'RAI2', 'RAI3', 'RETE4', 'CANALE5', 'ITALIA1', 'LA7'];
-
+        // Define the match stage based on type and wonull
+        let matchCondition = { "recorded_at": { "$regex": date } };
         const pipeline = [
             {
-                "$match": {
-                    "recorded_at": { "$regex": date },
-                   // "acr_result": { "$nin": channels_tv },
-                }
+                "$match": matchCondition
             },
             {
                 "$lookup": {
@@ -254,8 +268,21 @@ exports.getExportACRDetailsByDateRTV = async (req, res) => {
             },
             {
                 "$unwind": "$user_data"
+            },
+            { 
+                "$project": {
+                    "user_id": 1,
+                    "acr_result": 1,
+                    "recorded_at": 1,
+                    "model":1,
+                    "brand":1,
+                    "ID": "$user_data.ID",
+                    "weight_s": "$user_data.weight_s",
+        //                    "email": "$user_data.email"
+                }
             }
         ];
+        
 
         const acrDetails = await ACRLog.aggregate(pipeline);
 
@@ -269,20 +296,20 @@ exports.getExportACRDetailsByDateRTV = async (req, res) => {
 
         const csvStringifier = createCsvStringifier({
             header: [
-                { id: '_id', title: 'ID' },
+              //  { id: '_id', title: 'ID' },
                 { id: 'user_id', title: 'User ID' },
-                { id: 'uuid', title: 'UUID' },
-                { id: 'imei', title: 'IMEI' },
+              //  { id: 'uuid', title: 'UUID' },
+              //  { id: 'imei', title: 'IMEI' },
                 { id: 'model', title: 'Model' },
                 { id: 'brand', title: 'Brand' },
                 { id: 'acr_result', title: 'ACR Result' },
                 { id: 'recorded_at', title: 'Recorded At' },
-                { id: 'name', title: 'Name' },
+              //  { id: 'name', title: 'Name' },
                 { id: 'ID', title: 'ID' },
-                { id: 'email', title: 'Email' },
-                { id: 'Gen_cod', title: 'Gen Cod' },
-                { id: 'Gen_txt', title: 'Gen Txt' },
-                { id: 'Age_cod', title: 'Age Cod' },
+              //  { id: 'email', title: 'Email' },
+              //  { id: 'Gen_cod', title: 'Gen Cod' },
+              //  { id: 'Gen_txt', title: 'Gen Txt' },
+            /*  { id: 'Age_cod', title: 'Age Cod' },
                 { id: 'Age_txt', title: 'Age Txt' },
                 { id: 'Reg_cod', title: 'Reg Cod' },
                 { id: 'Reg_txt', title: 'Reg Txt' },
@@ -296,8 +323,9 @@ exports.getExportACRDetailsByDateRTV = async (req, res) => {
                 { id: 'Prof_txt', title: 'Prof Txt' },
                 { id: 'Istr_cod', title: 'Istr Cod' },
                 { id: 'Istr_txt', title: 'Istr Txt' },
+            */
                 { id: 'weight_s', title: 'Weight S' },
-                { id: 'isLogin', title: 'Is Login' },
+             /*   { id: 'isLogin', title: 'Is Login' }, */
             ],
         });
 
@@ -316,17 +344,29 @@ exports.getExportACRDetailsByDateRTV = async (req, res) => {
 };
 
 exports.getCsvByDateRTV = async (req, res) => {
+    console.log ("CSVDATERTV");
     try {
         const date = req.body.date;
-        const formattedDate = date.replace(/\//g, '-');
+        const type = req.body.type;
+        const wonull = req.body.notnull; 
+
         const channels_tv = ['RAI1', 'RAI2', 'RAI3', 'RETE4', 'CANALE5', 'ITALIA1', 'LA7'];
 
+        // Define the match stage based on type and wonull
+        let matchCondition = { "recorded_at": { "$regex": date } };
+        if (wonull === 'yes') {
+            matchCondition["acr_result"] = { "$ne": "NULL" };
+        }
+        if (type === 'TV') {
+            matchCondition["acr_result"] = { ...matchCondition["acr_result"], "$in": channels_tv };
+        } else if (type === 'RADIO') {
+            matchCondition["acr_result"] = { ...matchCondition["acr_result"], "$nin": channels_tv };
+        }
+
+        // Aggregation pipeline
         const pipeline = [
             {
-                "$match": {
-                    "recorded_at": { "$regex": date },
-                   // "acr_result": { "$nin": channels_tv },
-                }
+                "$match": matchCondition
             },
             {
                 "$lookup": {
@@ -338,9 +378,21 @@ exports.getCsvByDateRTV = async (req, res) => {
             },
             {
                 "$unwind": "$user_data"
+            },
+            {
+                "$project": {
+                    "user_id": 1,
+                    "acr_result": 1,
+                    "recorded_at": 1,
+                    "user_ID": "$user_data.ID",
+                    "weight_s": "$user_data.weight_s",
+//                    "email": "$user_data.email"
+                }
             }
         ];
+        
 
+        // Aggregate query
         const acrDetails = await ACRLog.aggregate(pipeline);
 
         if (acrDetails.length === 0) {
@@ -349,53 +401,16 @@ exports.getCsvByDateRTV = async (req, res) => {
                 message: 'No ACR details found for the given date and type.',
             });
         }
-
-
-        const csvStringifier = createCsvStringifier({
-            header: [
-                { id: '_id', title: 'ID' },
-                { id: 'user_id', title: 'User ID' },
-                { id: 'uuid', title: 'UUID' },
-                { id: 'imei', title: 'IMEI' },
-                { id: 'model', title: 'Model' },
-                { id: 'brand', title: 'Brand' },
-                { id: 'acr_result', title: 'ACR Result' },
-                { id: 'recorded_at', title: 'Recorded At' },
-                { id: 'name', title: 'Name' },
-                { id: 'ID', title: 'ID' },
-                { id: 'email', title: 'Email' },
-                { id: 'Gen_cod', title: 'Gen Cod' },
-                { id: 'Gen_txt', title: 'Gen Txt' },
-                { id: 'Age_cod', title: 'Age Cod' },
-                { id: 'Age_txt', title: 'Age Txt' },
-                { id: 'Reg_cod', title: 'Reg Cod' },
-                { id: 'Reg_txt', title: 'Reg Txt' },
-                { id: 'Area_cod', title: 'Area Cod' },
-                { id: 'Area_txt', title: 'Area Txt' },
-                { id: 'PV_cod', title: 'PV Cod' },
-                { id: 'PV_txt', title: 'PV Txt' },
-                { id: 'AC_cod', title: 'AC Cod' },
-                { id: 'AC_txt', title: 'AC Txt' },
-                { id: 'Prof_cod', title: 'Prof Cod' },
-                { id: 'Prof_txt', title: 'Prof Txt' },
-                { id: 'Istr_cod', title: 'Istr Cod' },
-                { id: 'Istr_txt', title: 'Istr Txt' },
-                { id: 'weight_s', title: 'Weight S' },
-                { id: 'isLogin', title: 'Is Login' },
-            ],
-        });
-
-        const csvData = csvStringifier.getHeaderString() + csvStringifier.stringifyRecords(acrDetails);
-
+        
         res.send({
             status: 'success',
-            csvData,
+            acrDetails,
         });
     } catch (error) {
-        console.error('Error fetching or exporting csv data by date:', error);
-        res.status(500).json({
+        console.error('Error fetching ACR type details by date:', error);
+        res.status(500).send({
             status: 'error',
-            message: 'Failed to fetch or export csv data details by date',
+            message: 'Failed to fetch ACR type details by date',
         });
     }
 };
@@ -408,28 +423,50 @@ exports.getACRDetailsByDateRTV = async (req, res) => {
 
         const channels_tv = ['RAI1', 'RAI2', 'RAI3', 'RETE4', 'CANALE5', 'ITALIA1', 'LA7'];
         
-        // Handle the date format conversion if necessary to match MongoDB date format
-        // Assuming date is in the format 'dd/MM/yyyy', adjust the regex pattern accordingly
-        const regexPattern = new RegExp(`^${date}`);
-        console.log('Regex Pattern:', date);
-
-        // Construct the base query for ACRLog
-        const baseQuery = { recorded_at: { $regex: date } };
-
-        // Add notnull filter if provided
+        // Define the match stage based on type and wonull
+        let matchCondition = { "recorded_at": { "$regex": date } };
         if (wonull === 'yes') {
-            baseQuery.acr_result = { $ne: "NULL" };
+            matchCondition["acr_result"] = { "$ne": "NULL" };
         }
-        
-        // Add channel filter based on the type
         if (type === 'TV') {
-            baseQuery.acr_result = { ...baseQuery.acr_result, $in: channels_tv };
-        } else {
-            baseQuery.acr_result = { ...baseQuery.acr_result, $nin: channels_tv };
+            matchCondition["acr_result"] = { ...matchCondition["acr_result"], "$in": channels_tv };
+        } else if (type === 'RADIO') {
+            matchCondition["acr_result"] = { ...matchCondition["acr_result"], "$nin": channels_tv };
         }
 
-        // Query ACR details based on the constructed query
-        const acrDetails = await ACRLog.find(baseQuery);
+        // Aggregation pipeline
+        const pipeline = [
+            {
+                "$match": matchCondition
+            },
+            {
+                "$lookup": {
+                    "from": "users",
+                    "localField": "user_id",
+                    "foreignField": "_id",
+                    "as": "user_data"
+                }
+            },
+            {
+                "$unwind": "$user_data"
+            },
+            {
+                "$project": {
+                    "user_id": 1,
+                    "acr_result": 1,
+                    "recorded_at": 1,
+                    "model":1,
+                    "brand":1,
+                    "user_ID": "$user_data.ID",
+                    "weight_s": "$user_data.weight_s",
+        //                    "email": "$user_data.email"
+                }
+            }
+        ];
+        
+
+        // Aggregate query
+        const acrDetails = await ACRLog.aggregate(pipeline);
 
         res.send({
             status: 'success',
@@ -897,4 +934,132 @@ const getActiveUsersIds = async (dateBefore24Hours) => {
         });
     }
 };
+exports.getPalinsestomByDateAndChannel = async (req, res) => {
+    try {
+        const { date, channel_name } = req.body; // Assuming date and acr_result are sent in the request body
 
+        // Handle the date format conversion if necessary to match MongoDB date format
+
+        // Create a regular expression for the date
+        const dateRegexPattern = new RegExp(`^${date}`);
+
+        // Query ACR details based on the regex pattern for recorded_at and acr_result
+        const palDetails = await Palinsestom.find({
+            day: { $regex: dateRegexPattern },
+            "events.channel.name":channel_name // Add acr_result filter
+        });
+
+        res.send({
+            status: 'success',
+            palDetails,
+        });
+    } catch (error) {
+        console.error('Error fetching PALINSESTO details by date:', error);
+        res.status(500).send({
+            status: 'error',
+            message: 'Failed to fetch PALINSESTO details by date',
+        });
+    }
+};
+
+exports.uploadPalinsestom = async (req, res) => {
+    try {
+        const file = req.file;
+
+        // Read the Excel file
+        const workbook = xlsx.readFile(file.path);
+        const sheetNames = workbook.SheetNames;
+
+        for (const sheetName of sheetNames) {
+            const worksheet = workbook.Sheets[sheetName];
+            const dayData = xlsx.utils.sheet_to_json(worksheet);
+
+            const channelInfo = getChannelInfo(sheetName); // Get channel info based on the sheet name
+            const documentId = await getNextSequenceValue('palinsestom'); // Ensure this generates a unique _id
+
+            let currentStartTime = null; // Initialize currentStartTime
+
+            const events = dayData.reduce((acc, event) => {
+                let start_time_str = event['ORA_INIZIO'];
+                const duration_str = event['DURATASO'];
+                const date_str = event['SC_DATA'];
+
+                if (!start_time_str && currentStartTime) {
+                    // Use the last end time as the start time for this event
+                    start_time_str = currentStartTime.format('HH:mm:ss');
+                } else if (start_time_str) {
+                    // Update currentStartTime when ORA_INIZIO is provided
+                    currentStartTime = moment.tz(start_time_str, 'HH:mm:ss', 'Europe/Rome');
+                }
+
+                const duration = moment.duration(duration_str, 'seconds');
+                const end_time = moment(currentStartTime).add(duration);
+                // Update currentStartTime to the end time for the next iteration
+                currentStartTime = end_time;
+
+                // Format the date from DD-MM-YYYY to YYYY-MM-DD for consistent handling
+                const formattedDate = moment.tz(date_str, 'DD-MM-YYYY', 'Europe/Rome').format('YYYY-MM-DD');
+              
+                acc.push({
+                    title: event['TITOLO'],
+                    channel: channelInfo,
+                    date: formattedDate.replace(/-/g, '/'),
+                    hour: currentStartTime.format('HH:mm'),
+                    time_interval: `${currentStartTime.format('HH:mm')} - ${end_time.format('HH:mm')}`,
+                    duration: duration_str,
+                    duration_in_minutes: `${Math.round(duration.asMinutes())} min`,
+                    duration_small_format: `${Math.floor(duration.asHours())}:${duration.minutes().toString().padStart(2, '0')}`,
+                    start_date: currentStartTime.format(),
+                    end_date: end_time.format(),
+                });
+
+                return acc;
+            }, []);
+        
+            const newPalinsesto = new Palinsestom({
+                _id: documentId,
+                day: dayData[0]?.['SC_DATA'],
+                events: events
+            });
+
+            // Insert into MongoDB (consider checking for duplicates)
+            await newPalinsesto.save();
+        }
+
+        res.send({ status: 'success', message: 'File processed and data saved.' });
+    } catch (error) {
+        console.error('Error processing file:', error);
+        res.status(500).send({ status: 'error', message: 'Error processing file.' });
+    }
+};
+
+ 
+
+function getChannelInfo(sheetName) {
+    // Replace with actual logic to map sheetName to channel details
+    // Example:
+    if (sheetName === 'Radio1') {
+      return {
+        name: 'RAIRadio1',
+        category_path: 'radio1',
+        palinsesto_url: 'rai-radio-1',
+        palinsesto_name: 'Radio 1'
+      };
+    }
+    if (sheetName === 'Radio2') {
+        return {
+          name: 'RAIRadio2',
+          category_path: 'radio2',
+          palinsesto_url: 'rai-radio-2',
+          palinsesto_name: 'Radio 2'
+        };
+      }
+      if (sheetName === 'Radio3') {
+        return {
+          name: 'RAIRadio3',
+          category_path: 'radio3',
+          palinsesto_url: 'rai-radio-3',
+          palinsesto_name: 'Radio 3'
+        };
+      }
+}
