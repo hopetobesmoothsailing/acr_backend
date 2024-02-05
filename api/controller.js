@@ -54,9 +54,9 @@ exports.signup = async (req, res) => {
     const Age2_txt = req.body.age2_txt;
     const Age3_cod = req.body.age3_cod === '-' ? 0 : req.body.age3_cod;
     const Age3_txt = req.body.age3_txt;
-    const Area2_cod = req.body.age3_cod === '-' ? 0 : req.body.area2_cod;
+    const Area2_cod = req.body.area2_cod === '-' ? 0 : req.body.area2_cod;
     const Area2_txt = req.body.area2_txt;
-    const Titolo_cod = req.body.age3_cod === '-' ? 0 : req.body.titolo_cod;
+    const Titolo_cod = req.body.titolo_cod === '-' ? 0 : req.body.titolo_cod;
     const Titolo_txt = req.body.titolo_txt;
     const PESOpan = req.body.pesopan;
     const costante = req.body.costante;
