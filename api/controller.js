@@ -278,7 +278,23 @@ exports.getExportACRDetailsByDateRTV = async (req, res) => {
                     "brand":1,
                     "ID": "$user_data.ID",
                     "weight_s": "$user_data.weight_s",
-        //                    "email": "$user_data.email"
+                    "Age_cod": "$user_data.Age_cod",
+                    "Age_txt": "$user_data.Age_txt",
+                    "Gen_cod": "$user_data.Gen_cod",
+                    "Gen_txt": "$user_data.Gen_txt",
+                    "Reg_cod": "$user_data.Age_cod",
+                    "Reg_txt": "$user_data.Reg_txt",
+                    "PV_cod": "$user_data.PV_cod",
+                    "PV_txt": "$user_data.PV_txt",
+                    "Area_cod": "$user_data.Area_cod",
+                    "Area_txt": "$user_data.Area_txt",
+                    "Istr_cod": "$user_data.Istr_cod",
+                    "Istr_txt": "$user_data.Istr_txt",
+                    "Prof_cod": "$user_data.Prof_cod",
+                    "Prof_txt": "$user_data.Prof_txt",
+                    "AC_cod": "$user_data.AC_cod",
+                    "AC_txt": "$user_data.AC_txt",
+                    "email": "$user_data.email"
                 }
             }
         ];
@@ -298,18 +314,18 @@ exports.getExportACRDetailsByDateRTV = async (req, res) => {
             header: [
               //  { id: '_id', title: 'ID' },
                 { id: 'user_id', title: 'User ID' },
-              //  { id: 'uuid', title: 'UUID' },
+                { id: 'ID', title: 'ID_NOTO' },
+                //  { id: 'uuid', title: 'UUID' },
               //  { id: 'imei', title: 'IMEI' },
                 { id: 'model', title: 'Model' },
                 { id: 'brand', title: 'Brand' },
                 { id: 'acr_result', title: 'ACR Result' },
                 { id: 'recorded_at', title: 'Recorded At' },
               //  { id: 'name', title: 'Name' },
-                { id: 'ID', title: 'ID' },
-              //  { id: 'email', title: 'Email' },
-              //  { id: 'Gen_cod', title: 'Gen Cod' },
-              //  { id: 'Gen_txt', title: 'Gen Txt' },
-            /*  { id: 'Age_cod', title: 'Age Cod' },
+                { id: 'email', title: 'Email' },
+                { id: 'Gen_cod', title: 'Gen Cod' },
+                { id: 'Gen_txt', title: 'Gen Txt' },
+                { id: 'Age_cod', title: 'Age Cod' },
                 { id: 'Age_txt', title: 'Age Txt' },
                 { id: 'Reg_cod', title: 'Reg Cod' },
                 { id: 'Reg_txt', title: 'Reg Txt' },
@@ -323,12 +339,11 @@ exports.getExportACRDetailsByDateRTV = async (req, res) => {
                 { id: 'Prof_txt', title: 'Prof Txt' },
                 { id: 'Istr_cod', title: 'Istr Cod' },
                 { id: 'Istr_txt', title: 'Istr Txt' },
-            */
-                { id: 'weight_s', title: 'Weight S' },
+                { id: 'weight_s', title: 'PESO' }
              /*   { id: 'isLogin', title: 'Is Login' }, */
             ],
         });
-
+ 
         const csvData = csvStringifier.getHeaderString() + csvStringifier.stringifyRecords(acrDetails);
 
         res.setHeader('Content-Type', 'text/csv');
@@ -424,8 +439,8 @@ exports.getACRDetailsByDateRTV = async (req, res) => {
         const channels_tv = ['RAI1', 'RAI2', 'RAI3', 'RETE4', 'CANALE5', 'ITALIA1', 'LA7'];
         
         // Define the match stage based on type and wonull
-        let matchCondition = { "recorded_at": { "$regex": date } };
-        if (wonull === 'yes') {
+        let matchCondition = { "recorded_at": { "$regex": date }, "user_id" : {"$gte": 68} };
+        if (wonull === 'yes') { 
             matchCondition["acr_result"] = { "$ne": "NULL" };
         }
         if (type === 'TV') {
@@ -480,6 +495,76 @@ exports.getACRDetailsByDateRTV = async (req, res) => {
         });
     }
 };
+exports.getACRDetailsByRangeRTV = async (req, res) => {
+    try {
+        const startDate = req.body.startDate; // Expected in YYYY-MM-DD
+        const stopDate = req.body.stopDate || startDate; // Use startDate if stopDate is not defined
+        const type = req.body.type;
+        const wonull = req.body.notnull; 
+        console.log("StartDate",startDate);
+        console.log("StopDate",startDate);
+
+        // Assuming 'f_recorded_at' is in ISO date format and can be compared directly
+        let matchCondition = {
+            "f_recorded_at": { "$gte": new Date(startDate), "$lte": new Date(stopDate) },
+            "user_id" : {"$gte": 68} // Assuming user_id filtering is still required
+        };
+
+        if (wonull === 'yes') { 
+            matchCondition["acr_result"] = { "$ne": "NULL" };
+        }
+        const channels_tv = ['RAI1', 'RAI2', 'RAI3', 'RETE4', 'CANALE5', 'ITALIA1', 'LA7'];
+        if (type === 'TV') {
+            matchCondition["acr_result"] = { ...matchCondition["acr_result"], "$in": channels_tv };
+        } else if (type === 'RADIO') {
+            matchCondition["acr_result"] = { ...matchCondition["acr_result"], "$nin": channels_tv };
+        }
+
+        // Aggregation pipeline
+        const pipeline = [
+            {
+                "$match": matchCondition
+            },
+            {
+                "$lookup": {
+                    "from": "users",
+                    "localField": "user_id",
+                    "foreignField": "_id",
+                    "as": "user_data"
+                }
+            },
+            {
+                "$unwind": "$user_data"
+            },
+            {
+                "$project": {
+                    "user_id": 1,
+                    "acr_result": 1,
+                    "recorded_at": 1,
+                    "model":1,
+                    "brand":1,
+                    "user_ID": "$user_data.ID",
+                    "weight_s": "$user_data.weight_s",
+        //                    "email": "$user_data.email"
+                }
+            }
+        ];
+
+        const acrDetails = await ACRLog.aggregate(pipeline);
+
+        res.send({
+            status: 'success',
+            acrDetails,
+        });
+    } catch (error) {
+        console.error('Error fetching ACR type details by date:', error);
+        res.status(500).send({
+            status: 'error',
+            message: 'Failed to fetch ACR type details by date',
+        });
+    }
+};
+
 exports.getACRDetailsByDateAndUser = async (req, res) => {
     
     try {
@@ -995,8 +1080,7 @@ exports.uploadPalinsestom = async (req, res) => {
                 const duration = moment.duration(duration_str, 'seconds');
                 const end_time = moment(currentStartTime).add(duration);
                 // Update currentStartTime to the end time for the next iteration
-                currentStartTime = end_time;
-
+                
                 // Format the date from DD-MM-YYYY to YYYY-MM-DD for consistent handling
                 const formattedDate = moment.tz(date_str, 'DD-MM-YYYY', 'Europe/Rome').format('YYYY-MM-DD');
               
@@ -1012,6 +1096,7 @@ exports.uploadPalinsestom = async (req, res) => {
                     start_date: currentStartTime.format(),
                     end_date: end_time.format(),
                 });
+                currentStartTime = end_time;
 
                 return acc;
             }, []);

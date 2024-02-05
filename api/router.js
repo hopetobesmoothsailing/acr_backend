@@ -25,5 +25,6 @@ router.post('/getExportACRDetailsByDateRTV', Controller.getExportACRDetailsByDat
 router.post('/getCsvByDateRTV', Controller.getCsvByDateRTV);
 router.post('/uploadPalinsestom', upload.single('file'), Controller.uploadPalinsestom);
 router.post('/getPalinsestomByDateAndChannel', Controller.getPalinsestomByDateAndChannel);
+router.post('/getACRDetailsByRangeRTV', Controller.getACRDetailsByRangeRTV);
 
 module.exports = router;
