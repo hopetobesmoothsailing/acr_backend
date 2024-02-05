@@ -31,7 +31,13 @@ const userSchema = new Schema({
     Age2_cod: Number,
     Age2_txt: String,
     Age3_cod: Number,
-    Age3_txt: String
+    Age3_txt: String,
+    Area2_cod: Number,
+    Area2_txt: String,
+    Titolo_cod: Number,
+    Titolo_txt: String,
+    PESOpan: Number,
+    costante: Number,
 });
 
 module.exports = mongoose.model('Users', userSchema, 'users');
