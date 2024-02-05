@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const PalinsestoSchema = new mongoose.Schema({
-  id: String,
+  _id: Number,
   day: String,
   events: [
     {
@@ -24,4 +24,4 @@ const PalinsestoSchema = new mongoose.Schema({
   ]
 });
 
-module.exports = mongoose.model('Palinsesto', PalinsestoSchema);
+module.exports = mongoose.model('Palinsestom', PalinsestoSchema);
